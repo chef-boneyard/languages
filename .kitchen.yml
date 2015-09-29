@@ -7,10 +7,12 @@ provisioner:
 
 platforms:
   - name: ubuntu-12.04
-  - name: centos-6.5
+    run_list:
+      - apt::default
+  - name: centos-7.1
+    run_list:
+      - yum-epel::default
 
 suites:
-  - name: default
-    run_list:
-      - recipe[languages::default]
-    attributes:
+  - name: languages_rust
+    run_list: languages_rust::default
