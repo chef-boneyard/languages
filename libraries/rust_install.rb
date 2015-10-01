@@ -45,14 +45,13 @@ class Chef
         Chef::Log.info("#{new_resource} is up-to-date - skipping")
       else
         converge_by("Create #{new_resource}") do
-          # If rust is already installed, do we need to uninstall the old one before installing the new one?
-          # Or does the script manage that already?
           install_rust
         end
       end
     end
 
     private
+
     #
     # Current version of rust installed
     #
@@ -61,33 +60,32 @@ class Chef
     def current_rust_version
       # Make sure this works on windows.
       # Subtract 1 from the date in order to get the correct version number; the existing recipe has been quietly installing the same thing over and over again.
-      thing = %x(#{new_resource.prefix}/rustc --version).split.last[0..-2]
+      `#{new_resource.prefix}/rustc --version`.split.last[0..-2]
     rescue Errno::ENOENT
-      Chef::Log.info("THING IS #{thing.inspect}")
-      "NONE"
+      'NONE'
     end
 
     def install_rust
       if windows?
         package = Resource::WindowsPackage.new('rust')
-        # 32-bit windows is a build environment, not a platform.  Will we ever need the 32-bit rust compiler on windows?
+        # Assumes we will always use the 64-bit environment for rust.
         package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
         package.run_action(:install)
       else
         rust_installer = Resource::RemoteFile.new('rust_installer', run_context)
-        rust_installer.source("https://static.rust-lang.org/rustup.sh")
+        rust_installer.source('https://static.rust-lang.org/rustup.sh')
         rust_installer.path("#{Config[:file_cache_path]}/rustup.sh")
         rust_installer.run_action(:create)
 
-        rustup_cmd = ["bash",
+        rustup_cmd = ['bash',
                       "#{Config[:file_cache_path]}/rustup.sh",
                       "--channel=#{new_resource.channel}",
                       "--prefix=#{new_resource.prefix}",
                       "--date=#{new_resource.version}",
-                      "--yes"].join(' ')
+                      '--yes'].join(' ')
 
         # why?
-        rustup_cmd << " --disable-sudo" if mac_os_x?
+        rustup_cmd << ' --disable-sudo' if mac_os_x?
 
         execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
         execute.command(rustup_cmd)
