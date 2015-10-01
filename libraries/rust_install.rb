@@ -45,7 +45,12 @@ class Chef
         Chef::Log.info("#{new_resource} is up-to-date - skipping")
       else
         converge_by("Create #{new_resource}") do
-          install_rust
+          if windows?
+            install_rust_windows
+          else
+            fetch_rust_installer
+            run_rust_installer
+          end
         end
       end
     end
@@ -65,32 +70,34 @@ class Chef
       'NONE'
     end
 
-    def install_rust
-      if windows?
-        package = Resource::WindowsPackage.new('rust')
-        # Assumes we will always use the 64-bit environment for rust.
-        package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
-        package.run_action(:install)
-      else
-        rust_installer = Resource::RemoteFile.new('rust_installer', run_context)
-        rust_installer.source('https://static.rust-lang.org/rustup.sh')
-        rust_installer.path("#{Config[:file_cache_path]}/rustup.sh")
-        rust_installer.run_action(:create)
+    def install_rust_windows
+      package = Resource::WindowsPackage.new('rust')
+      # Assumes we will always use the 64-bit environment for rust.
+      package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
+      package.run_action(:install)
+    end
 
-        rustup_cmd = ['bash',
-                      "#{Config[:file_cache_path]}/rustup.sh",
-                      "--channel=#{new_resource.channel}",
-                      "--prefix=#{new_resource.prefix}",
-                      "--date=#{new_resource.version}",
-                      '--yes'].join(' ')
+    def fetch_rust_installer
+      rust_installer = Resource::RemoteFile.new('rust_installer', run_context)
+      rust_installer.source('https://static.rust-lang.org/rustup.sh')
+      rust_installer.path("#{Config[:file_cache_path]}/rustup.sh")
+      rust_installer.run_action(:create)
+    end
 
-        # why?
-        rustup_cmd << ' --disable-sudo' if mac_os_x?
+    def run_rust_installer
+      rustup_cmd = ['bash',
+                    "#{Config[:file_cache_path]}/rustup.sh",
+                    "--channel=#{new_resource.channel}",
+                    "--prefix=#{new_resource.prefix}",
+                    "--date=#{new_resource.version}",
+                    '--yes'].join(' ')
 
-        execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
-        execute.command(rustup_cmd)
-        execute.run_action(:run)
-      end
+      # Assumes OS X is a dev machine.
+      rustup_cmd << ' --disable-sudo' if mac_os_x?
+
+      execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
+      execute.command(rustup_cmd)
+      execute.run_action(:run)
     end
   end
 end
