@@ -16,3 +16,5 @@ platforms:
 suites:
   - name: languages_rust
     run_list: languages_rust::default
+  - name: languages_rust_prefix
+    run_list: languages_rust::prefix

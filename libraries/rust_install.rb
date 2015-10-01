@@ -26,6 +26,7 @@ class Chef
 
     attribute :version, kind_of: String, name_attribute: true
     attribute :channel, kind_of: String
+    attribute :prefix, kind_of: String, default: '/usr/local'
   end
 end
 
@@ -60,8 +61,9 @@ class Chef
     def current_rust_version
       # Make sure this works on windows.
       # Subtract 1 from the date in order to get the correct version number; the existing recipe has been quietly installing the same thing over and over again.
-      %x(rustc --version).split.last[0..-2]
+      thing = %x(#{new_resource.prefix}/rustc --version).split.last[0..-2]
     rescue Errno::ENOENT
+      Chef::Log.info("THING IS #{thing.inspect}")
       "NONE"
     end
 
@@ -80,6 +82,7 @@ class Chef
         rustup_cmd = ["bash",
                       "#{Config[:file_cache_path]}/rustup.sh",
                       "--channel=#{new_resource.channel}",
+                      "--prefix=#{new_resource.prefix}",
                       "--date=#{new_resource.version}",
                       "--yes"].join(' ')
 
