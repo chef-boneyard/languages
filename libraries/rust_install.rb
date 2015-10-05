@@ -32,16 +32,18 @@ end
 
 class Chef
   class Provider::RustInstall < Provider::LWRPBase
+    require 'date'
     require_relative '_helper'
     include Languages::Helper
+
+    provides :rust_install
 
     def whyrun_supported?
       true
     end
 
     action(:install) do
-      Chef::Log.info("CURRENT:  #{current_rust_version}, NEW:  #{new_resource.version}")
-      if current_rust_version == new_resource.version
+      if current_rust_version == desired_rust_version
         Chef::Log.info("#{new_resource} is up-to-date - skipping")
       else
         converge_by("Create #{new_resource}") do
@@ -63,11 +65,22 @@ class Chef
     # @return String
     #
     def current_rust_version
+      version_cmd = "#{new_resource.prefix}/bin/rustc --version"
+      version_cmd = 'rustc --version' if windows?
       # Make sure this works on windows.
-      # Subtract 1 from the date in order to get the correct version number; the existing recipe has been quietly installing the same thing over and over again.
-      `#{new_resource.prefix}/rustc --version`.split.last[0..-2]
+      `#{version_cmd}`.split.last[0..-2]
     rescue Errno::ENOENT
       'NONE'
+    end
+
+    #
+    # rust uses the previous day's date for the nightly version
+    #
+    # @return String
+    #
+    def desired_rust_version
+      thing = Date.parse(new_resource.version)
+      thing.prev_day.to_s
     end
 
     def install_rust_windows
