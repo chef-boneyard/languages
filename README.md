@@ -1,4 +1,4 @@
 # languages
 
-TODO: Enter the cookbook description here.
+Resources to install compilers and other support for various languages.
 
