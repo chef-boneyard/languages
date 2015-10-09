@@ -43,7 +43,7 @@ class Chef
     end
 
     action(:install) do
-      if current_rust_version == desired_rust_version
+      if current_rust_version == new_resource.version
         Chef::Log.info("#{new_resource} is up-to-date - skipping")
       else
         converge_by("Create #{new_resource}") do
@@ -66,16 +66,6 @@ class Chef
       `#{version_cmd}`.split.last[0..-2]
     rescue Errno::ENOENT
       'NONE'
-    end
-
-    #
-    # rust uses the previous day's date for the nightly version
-    #
-    # @return String
-    #
-    def desired_rust_version
-      thing = Date.parse(new_resource.version)
-      thing.prev_day.to_s
     end
 
     def install_rust
@@ -120,6 +110,7 @@ class Chef
       # Note 1:  Assumes we will always use the 64-bit environment for rust.
       # Note 2:  Drops prefix on the floor.
       package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
+      package.options('ADDLOCAL=Rustc,Gcc,Docs,Cargo,Path')
       package.run_action(:install)
     end
   end
