@@ -1,5 +1,8 @@
 require 'serverspec'
 
-set :backend, :exec
-
-set :path, '/usr/local/bin:/sbin:/usr/local/sbin:/usr/bin:/bin'
+if (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
+  set :backend, :exec
+else
+  set :backend, :cmd
+  set :os, family: 'windows'
+end

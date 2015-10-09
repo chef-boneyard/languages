@@ -47,12 +47,7 @@ class Chef
         Chef::Log.info("#{new_resource} is up-to-date - skipping")
       else
         converge_by("Create #{new_resource}") do
-          if windows?
-            install_rust_windows
-          else
-            fetch_rust_installer
-            run_rust_installer
-          end
+          install_rust
         end
       end
     end
@@ -83,11 +78,9 @@ class Chef
       thing.prev_day.to_s
     end
 
-    def install_rust_windows
-      package = Resource::WindowsPackage.new('rust')
-      # Assumes we will always use the 64-bit environment for rust.
-      package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
-      package.run_action(:install)
+    def install_rust
+      fetch_rust_installer
+      run_rust_installer
     end
 
     def fetch_rust_installer
@@ -111,6 +104,23 @@ class Chef
       execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
       execute.command(rustup_cmd)
       execute.run_action(:run)
+    end
+  end
+
+  class Provider::RustInstallWindows < Provider::RustInstall
+    require_relative '_helper'
+    include Languages::Helper
+
+    provides :rust_install, platform_family: 'windows'
+
+    protected
+
+    def install_rust
+      package = Resource::WindowsPackage.new('rust', run_context)
+      # Note 1:  Assumes we will always use the 64-bit environment for rust.
+      # Note 2:  Drops prefix on the floor.
+      package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
+      package.run_action(:install)
     end
   end
 end
