@@ -15,6 +15,9 @@ platforms:
   - name: windows-server-2012r2-standard
     driver:
       box: chef/windows-server-2012r2-standard
+  - name: macosx-10.9
+    driver:
+      box: chef/macosx-10.9 # private
 
 suites:
   - name: languages_rust
