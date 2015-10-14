@@ -118,6 +118,7 @@ class Chef
     end
 
     def install_rust
+      Chef::Log.info("The 'prefix' parameter currently no-ops on Windows.")
       package = Resource::WindowsPackage.new('rust', run_context)
       # Note 1:  Assumes we will always use the 64-bit environment for rust.
       # Note 2:  Drops prefix on the floor.
