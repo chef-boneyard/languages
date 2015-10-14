@@ -5,7 +5,7 @@ package 'curl' unless mac_os_x?
 
 directory '/opt/rust'
 
-rust_install '2015-08-17' do
+rust_install '2015-10-03' do
   channel 'nightly'
   prefix  '/opt/rust'
 end

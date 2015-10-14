@@ -25,7 +25,7 @@ class Chef
     default_action :install
 
     attribute :version, kind_of: String, name_attribute: true
-    attribute :channel, kind_of: String
+    attribute :channel, kind_of: String, default: 'stable'
     attribute :prefix, kind_of: String, default: '/usr/local'
   end
 end
@@ -52,7 +52,7 @@ class Chef
       end
     end
 
-    private
+    protected
 
     #
     # Current version of rust installed
@@ -61,8 +61,6 @@ class Chef
     #
     def current_rust_version
       version_cmd = "#{new_resource.prefix}/bin/rustc --version"
-      version_cmd = 'rustc --version' if windows?
-      # Make sure this works on windows.
       `#{version_cmd}`.split.last[0..-2]
     rescue Errno::ENOENT
       'NONE'
@@ -75,22 +73,25 @@ class Chef
 
     def fetch_rust_installer
       rust_installer = Resource::RemoteFile.new('rust_installer', run_context)
-      rust_installer.source('https://static.rust-lang.org/rustup.sh')
       rust_installer.path("#{Config[:file_cache_path]}/rustup.sh")
+      rust_installer.source('https://static.rust-lang.org/rustup.sh')
       rust_installer.run_action(:create)
     end
 
-    def run_rust_installer
-      rustup_cmd = ['bash',
-                    "#{Config[:file_cache_path]}/rustup.sh",
-                    "--channel=#{new_resource.channel}",
-                    "--prefix=#{new_resource.prefix}",
-                    "--date=#{new_resource.version}",
-                    '--yes'].join(' ')
+    def rustup_cmd
+      cmd = ['bash',
+             "#{Config[:file_cache_path]}/rustup.sh",
+             "--channel=#{new_resource.channel}",
+             "--prefix=#{new_resource.prefix}",
+             "--date=#{new_resource.version}",
+             '--yes'].join(' ')
 
       # Assumes OS X is a dev machine.
-      rustup_cmd << ' --disable-sudo' if mac_os_x?
+      cmd << ' --disable-sudo' if mac_os_x?
+      cmd
+    end
 
+    def run_rust_installer
       execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
       execute.command(rustup_cmd)
       execute.run_action(:run)
@@ -104,6 +105,17 @@ class Chef
     provides :rust_install, platform_family: 'windows'
 
     protected
+
+    #
+    # Current version of rust installed
+    #
+    # @return String
+    #
+    def current_rust_version
+      `rustc --version`.split.last[0..-2]
+    rescue Errno::ENOENT
+      'NONE'
+    end
 
     def install_rust
       package = Resource::WindowsPackage.new('rust', run_context)
