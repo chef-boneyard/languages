@@ -61,7 +61,7 @@ class Chef
     #
     def current_rust_version
       version_cmd = "#{new_resource.prefix}/bin/rustc --version"
-      `#{version_cmd}`.split.last[0..-2]
+      `#{version_cmd}`.split.last[0..-2] # ~FC048
     rescue Errno::ENOENT
       'NONE'
     end
@@ -112,7 +112,7 @@ class Chef
     # @return String
     #
     def current_rust_version
-      `rustc --version`.split.last[0..-2]
+      `rustc --version`.split.last[0..-2] # ~FC048
     rescue Errno::ENOENT
       'NONE'
     end
