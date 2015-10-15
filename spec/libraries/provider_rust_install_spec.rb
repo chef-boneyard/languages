@@ -28,18 +28,20 @@ describe Chef::Provider::RustInstall do
 
   describe '#current_rust_version' do
     context 'installed at prefix directory' do
+      let(:shellout) { double(run_command: nil, error!: nil, stdout: '', stderr: double(empty?: true)) }
       before do
-        allow(subject).to receive(:`).with('/usr/local/bin/rustc --version').and_return('rustc 1.4.0-nightly (e822a18ae 2015-10-03)')
+        allow(Mixlib::ShellOut).to receive(:new).and_return(shellout, run_command: nil)
       end
 
       it 'returns the version' do
+        expect(shellout).to receive(:stdout).and_return('rustc 1.4.0-nightly (e822a18ae 2015-10-03)')
         expect(subject.send(:current_rust_version)).to match('2015-10-03')
       end
     end
 
     context 'not installed at prefix directory' do
       before do
-        allow(subject).to receive(:`).with('/usr/local/bin/rustc --version').and_raise(Errno::ENOENT)
+        allow(Mixlib::ShellOut).to receive(:new).and_raise(Errno::ENOENT)
       end
 
       it 'returns NONE' do

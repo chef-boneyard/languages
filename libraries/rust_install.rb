@@ -26,7 +26,7 @@ class Chef
 
     attribute :version, kind_of: String, name_attribute: true
     attribute :channel, kind_of: String, default: 'stable'
-    attribute :prefix, kind_of: String, default: '/usr/local'
+    attribute :prefix, kind_of: String, default: lazy { ChefConfig.windows? ? '/usr/local' : '/usr/local' }
   end
 end
 
@@ -60,8 +60,9 @@ class Chef
     # @return String
     #
     def current_rust_version
-      version_cmd = "#{new_resource.prefix}/bin/rustc --version"
-      `#{version_cmd}`.split.last[0..-2] # ~FC048
+      version_cmd = Mixlib::ShellOut.new("#{new_resource.prefix}/bin/rustc --version")
+      version_cmd.run_command
+      version_cmd.stdout.split.last[0..-2]
     rescue Errno::ENOENT
       'NONE'
     end
@@ -112,13 +113,17 @@ class Chef
     # @return String
     #
     def current_rust_version
-      `rustc --version`.split.last[0..-2] # ~FC048
-    rescue Errno::ENOENT
-      'NONE'
+      version_cmd = Mixlib::ShellOut.new('rustc.exe --version')
+      version_cmd.run_command
+      # Is Mixlib:ShellOut eating errno on Windows?
+      # `` raised Errno::ENOENT on Windows as it did on *nix
+      Chef::Log.debug("BLOB:  #{version_cmd.inspect}")
+      return 'NONE' if version_cmd.stderr.include?('is not recognized as an internal or external command')
+      version_cmd.stdout.split.last[0..-2]
     end
 
     def install_rust
-      Chef::Log.info("The 'prefix' parameter currently no-ops on Windows.")
+      Chef::Log.info("The 'prefix' parameter currently no-ops on Windows.") unless new_resource.prefix.nil?
       package = Resource::WindowsPackage.new('rust', run_context)
       # Note 1:  Assumes we will always use the 64-bit environment for rust.
       # Note 2:  Drops prefix on the floor.
