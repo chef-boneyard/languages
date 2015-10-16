@@ -12,7 +12,15 @@ platforms:
   - name: centos-7.1
     run_list:
       - yum-epel::default
+  - name: windows-server-2012r2-standard
+    driver:
+      box: chef/windows-server-2012r2-standard
+  - name: macosx-10.9
+    driver:
+      box: chef/macosx-10.9 # private
 
 suites:
   - name: languages_rust
     run_list: languages_rust::default
+  - name: languages_rust_prefix
+    run_list: languages_rust::prefix

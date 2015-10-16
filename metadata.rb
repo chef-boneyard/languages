@@ -1,9 +1,9 @@
 name 'languages'
-maintainer 'The Authors'
-maintainer_email 'you@example.com'
-license 'all_rights'
+maintainer 'Chef Software Inc.'
+maintainer_email 'releng@chef.io'
+license 'Apache 2.0'
 description 'Installs/Configures languages'
 long_description 'Installs/Configures languages'
-version '0.1.0'
+version '0.1.4'
 
 depends 'chef-sugar', '~> 3.1'

@@ -25,71 +25,117 @@ class Chef
     default_action :install
 
     attribute :version, kind_of: String, name_attribute: true
-    attribute :channel, kind_of: String
+    attribute :channel, kind_of: String, default: 'stable'
+    attribute :prefix, kind_of: String, default: lazy { ChefConfig.windows? ? nil : '/usr/local' }
   end
 end
 
 class Chef
   class Provider::RustInstall < Provider::LWRPBase
+    require 'date'
     require_relative '_helper'
     include Languages::Helper
+
+    provides :rust_install
 
     def whyrun_supported?
       true
     end
 
     action(:install) do
-      Chef::Log.info("CURRENT:  #{current_rust_version}, NEW:  #{new_resource.version}")
       if current_rust_version == new_resource.version
         Chef::Log.info("#{new_resource} is up-to-date - skipping")
       else
         converge_by("Create #{new_resource}") do
-          # If rust is already installed, do we need to uninstall the old one before installing the new one?
-          # Or does the script manage that already?
           install_rust
         end
       end
     end
 
-    private
+    protected
+
     #
     # Current version of rust installed
     #
     # @return String
     #
     def current_rust_version
-      # Make sure this works on windows.
-      # Subtract 1 from the date in order to get the correct version number; the existing recipe has been quietly installing the same thing over and over again.
-      %x(rustc --version).split.last[0..-2]
+      version_cmd = Mixlib::ShellOut.new("#{new_resource.prefix}/bin/rustc --version")
+      version_cmd.run_command
+      version_cmd.stdout.split.last[0..-2]
     rescue Errno::ENOENT
-      "NONE"
+      'NONE'
     end
 
     def install_rust
-      if windows?
-        package = Resource::WindowsPackage.new('rust')
-        # 32-bit windows is a build environment, not a platform.  Will we ever need the 32-bit rust compiler on windows?
-        package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
-        package.run_action(:install)
-      else
-        rust_installer = Resource::RemoteFile.new('rust_installer', run_context)
-        rust_installer.source("https://static.rust-lang.org/rustup.sh")
-        rust_installer.path("#{Config[:file_cache_path]}/rustup.sh")
-        rust_installer.run_action(:create)
+      fetch_rust_installer
+      run_rust_installer
+    end
 
-        rustup_cmd = ["bash",
-                      "#{Config[:file_cache_path]}/rustup.sh",
-                      "--channel=#{new_resource.channel}",
-                      "--date=#{new_resource.version}",
-                      "--yes"].join(' ')
+    def install_curl
+      return if mac_os_x?
+      package = Resource::Package.new('curl', run_context)
+      package.package_name('curl')
+      package.run_action(:install)
+    end
 
-        # why?
-        rustup_cmd << " --disable-sudo" if mac_os_x?
+    def fetch_rust_installer
+      rust_installer = Resource::RemoteFile.new('rust_installer', run_context)
+      rust_installer.path("#{Config[:file_cache_path]}/rustup.sh")
+      rust_installer.source('https://static.rust-lang.org/rustup.sh')
+      rust_installer.run_action(:create)
+    end
 
-        execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
-        execute.command(rustup_cmd)
-        execute.run_action(:run)
-      end
+    def rustup_cmd
+      cmd = ['bash',
+             "#{Config[:file_cache_path]}/rustup.sh",
+             "--channel=#{new_resource.channel}",
+             "--prefix=#{new_resource.prefix}",
+             "--date=#{new_resource.version}",
+             '--yes'].join(' ')
+
+      # Assumes OS X is a dev machine.
+      cmd << ' --disable-sudo' if mac_os_x?
+      cmd
+    end
+
+    def run_rust_installer
+      execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
+      execute.command(rustup_cmd)
+      execute.run_action(:run)
+    end
+  end
+
+  class Provider::RustInstallWindows < Provider::RustInstall
+    require_relative '_helper'
+    include Languages::Helper
+
+    provides :rust_install, platform_family: 'windows'
+
+    protected
+
+    #
+    # Current version of rust installed
+    #
+    # @return String
+    #
+    def current_rust_version
+      version_cmd = Mixlib::ShellOut.new('rustc.exe --version')
+      version_cmd.run_command
+      # Is Mixlib:ShellOut eating errno on Windows?
+      # `` raised Errno::ENOENT on Windows as it did on *nix
+      return 'NONE' if version_cmd.stderr.include?('is not recognized as an internal or external command')
+      version_cmd.stdout.split.last[0..-2]
+    end
+
+    def install_rust
+      Chef::Log.info("The 'prefix' parameter currently no-ops on Windows.") unless new_resource.prefix.nil?
+      package = Resource::WindowsPackage.new('rust', run_context)
+      # Note 1:  Assumes we will always use the 64-bit environment for rust.
+      # Note 2:  Drops prefix on the floor.
+      package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
+      package.options('ADDLOCAL=Rustc,Gcc,Docs,Cargo,Path')
+      package.run_action(:install)
     end
   end
 end

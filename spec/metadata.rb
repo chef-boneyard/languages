@@ -1,0 +1,7 @@
+name 'fake'
+maintainer 'Chef Software Inc.'
+maintainer_email 'releng@chef.io'
+license 'Apache 2.0'
+description 'workaround for https://github.com/acrmp/foodcritic/issues/148'
+long_description 'workaround for https://github.com/acrmp/foodcritic/issues/148'
+version '0.0.1'

@@ -17,7 +17,7 @@ rescue LoadError
   Chef::Log.warn 'chef-sugar gem could not be loaded.'
 end
 
-module Languages 
+module Languages
   module Helper
     include Chef::Sugar::DSL if Chef.const_defined?('Sugar')
 
