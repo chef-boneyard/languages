@@ -1,8 +1,6 @@
 include_recipe 'chef-sugar::default'
 include_recipe 'languages::default'
 
-package 'curl' unless mac_os_x? || windows?
-
 if windows?
   install_dir = 'C:/Program Files/Opt'
 else

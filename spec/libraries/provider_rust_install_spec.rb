@@ -96,6 +96,35 @@ describe Chef::Provider::RustInstall do
     end
   end
 
+  describe '#install_curl' do
+    let(:package_name) { 'curl' }
+    let(:package_resource) do
+      double(
+        Chef::Resource::Package,  package_name: nil,
+                                  run_action:   nil
+      )
+    end
+
+    before do
+      allow(Chef::Resource::Package).to receive(:new).and_return(package_resource)
+    end
+
+    it 'installs curl as a package' do
+      expect(package_resource).to receive(:package_name).with(package_name)
+      subject.send(:install_curl)
+    end
+
+    context 'on OS X' do
+      before do
+        allow(subject).to receive(:mac_os_x?).and_return(true)
+      end
+
+      it 'returns' do
+        expect(subject.send(:install_curl)).to equal(nil)
+      end
+    end
+  end
+
   describe '#fetch_rust_installer' do
     let(:path) { "#{Chef::Config[:file_cache_path]}/rustup.sh" }
     let(:source) { 'https://static.rust-lang.org/rustup.sh' }

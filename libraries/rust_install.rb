@@ -26,7 +26,7 @@ class Chef
 
     attribute :version, kind_of: String, name_attribute: true
     attribute :channel, kind_of: String, default: 'stable'
-    attribute :prefix, kind_of: String, default: lazy { ChefConfig.windows? ? '/usr/local' : '/usr/local' }
+    attribute :prefix, kind_of: String, default: lazy { ChefConfig.windows? ? nil : '/usr/local' }
   end
 end
 
@@ -70,6 +70,13 @@ class Chef
     def install_rust
       fetch_rust_installer
       run_rust_installer
+    end
+
+    def install_curl
+      return if mac_os_x?
+      package = Resource::Package.new('curl', run_context)
+      package.package_name('curl')
+      package.run_action(:install)
     end
 
     def fetch_rust_installer
@@ -117,7 +124,6 @@ class Chef
       version_cmd.run_command
       # Is Mixlib:ShellOut eating errno on Windows?
       # `` raised Errno::ENOENT on Windows as it did on *nix
-      Chef::Log.debug("BLOB:  #{version_cmd.inspect}")
       return 'NONE' if version_cmd.stderr.include?('is not recognized as an internal or external command')
       version_cmd.stdout.split.last[0..-2]
     end
