@@ -23,13 +23,8 @@ describe Chef::Resource::RubyInstall do
   let(:run_context) { Chef::RunContext.new(node, {}, nil) }
   let(:version) { '2.1.7' }
 
-<<<<<<< HEAD
   it 'has a default prefix of /opt/rubies/ruby-<version>' do
     expect(subject.prefix).to eq("/opt/rubies/ruby-#{version}")
-=======
-  it 'has a default prefix of /opt/rubies/<version>' do
-    expect(subject.prefix).to eq("/opt/rubies/#{version}")
->>>>>>> Port ruby_install from omnibus cookbook to here.
   end
 
   it 'properly sets the version' do
