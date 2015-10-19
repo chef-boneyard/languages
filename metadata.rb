@@ -7,3 +7,5 @@ long_description 'Installs/Configures languages'
 version '0.1.4'
 
 depends 'chef-sugar', '~> 3.1'
+depends 'build-essential', '~> 2.2'
+depends 'remote_install',  '~> 1.0'
