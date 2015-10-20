@@ -23,8 +23,8 @@ describe Chef::Resource::RubyInstall do
   let(:run_context) { Chef::RunContext.new(node, {}, nil) }
   let(:version) { '2.1.7' }
 
-  it 'has a default prefix of /opt/rubies/<version>' do
-    expect(subject.prefix).to eq("/opt/rubies/#{version}")
+  it 'has a default prefix of /opt/rubies/ruby-<version>' do
+    expect(subject.prefix).to eq("/opt/rubies/ruby-#{version}")
   end
 
   it 'properly sets the version' do

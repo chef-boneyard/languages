@@ -97,19 +97,23 @@ class Chef
     end
 
     def install_dependencies
-      # install build-essentials
-      package = Chef::Resource::Package.new('build-essential', run_context)
-      package.package_name('build-essential')
-      package.run_action(:install)
+      run_context.include_recipe 'build-essential::default'
 
       # install ruby-install
-      return if Chef::Sugar::Shell.installed_at_version?('ruby-install', '0.4.1')
-      ruby_install = Chef::Resource::RemoteInstall.new('ruby-install', run_context)
+      ruby_install_path = '/usr/local/bin/ruby-install'
+      return if Chef::Sugar::Shell.installed_at_version?(ruby_install_path, '0.4.1')
+      ruby_install = Chef::Resource::RemoteInstall.new(ruby_install_path, run_context)
       ruby_install.source('https://codeload.github.com/postmodern/ruby-install/tar.gz/v0.4.1')
       ruby_install.version('0.4.1')
       ruby_install.checksum('1b35d2b6dbc1e75f03fff4e8521cab72a51ad67e32afd135ddc4532f443b730e')
-      ruby_install.install_command('make install')
+      ruby_install.install_command("make -j #{parallelism} install")
       ruby_install.run_action(:install)
+    end
+
+    # The number of builders to use for make. By default, this is the total
+    # number of CPUs, with a minimum being 2.
+    def parallelism
+      [node['cpu'] && node['cpu']['total'].to_i, 2].max
     end
   end
 
@@ -230,7 +234,7 @@ class Chef
       cacerts = Resource::CookbookFile.new("install cacerts bundle for ruby-#{version}", run_context)
       cacerts.path(cacert_file)
       cacerts.source('cacert.pem')
-      cacerts.cookbook('omnibus')
+      cacerts.cookbook('languages')
       cacerts.backup(false)
       cacerts.sensitive(true)
       cacerts.run_action(:create)
