@@ -24,3 +24,5 @@ suites:
     run_list: languages_rust::default
   - name: languages_rust_prefix
     run_list: languages_rust::prefix
+  - name: languages_ruby
+    run_list: languages_ruby::default
