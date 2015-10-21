@@ -22,7 +22,13 @@ platforms:
 suites:
   - name: languages_rust
     run_list: languages_rust::default
+  - name: languages_nvm
+    run_list: languages_nvm::default
+  - name: languages_nodejs
+    run_list: languages_nodejs::default
   - name: languages_rust_prefix
     run_list: languages_rust::prefix
   - name: languages_ruby
     run_list: languages_ruby::default
+  - name: languages_ruby_prefix
+    run_list: languages_ruby::prefix

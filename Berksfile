@@ -11,4 +11,6 @@ group :integration do
   cookbook 'yum-epel'
   fixture  'rust'
   fixture  'ruby'
+  fixture  'nvm'
+  fixture  'nodejs'
 end

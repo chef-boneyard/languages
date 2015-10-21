@@ -8,4 +8,5 @@ version '0.1.6'
 
 depends 'chef-sugar', '~> 3.1'
 depends 'build-essential', '~> 2.2'
-depends 'remote_install',  '~> 1.0'
+depends 'compat_resource'
+depends 'remote_install', '~> 1.0'
