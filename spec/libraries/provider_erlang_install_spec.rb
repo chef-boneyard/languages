@@ -64,7 +64,7 @@ describe Chef::Provider::ErlangInstall do
     it 'installs kerl' do
       expect(execute).to receive(:source)
         .with('https://raw.githubusercontent.com/spawngrid/kerl/master/kerl')
-      expect(execute).to receive(:path).with(/.*\/kerl$/)
+      expect(execute).to receive(:path).with(%r{.*/kerl$})
       expect(execute).to receive(:mode).with('0755')
       expect(execute).to receive(:run_action).with(:create)
       Chef::Provider::ErlangInstall.new(resource, run_context).send(:install_kerl)
@@ -78,7 +78,7 @@ describe Chef::Provider::ErlangInstall do
     end
 
     it 'activates kerl' do
-      expect(execute).to receive(:command).with(/.*\/kerl update releases$/)
+      expect(execute).to receive(:command).with(%r{.*/kerl update releases$})
       expect(execute).to receive(:run_action).with(:run)
       Chef::Provider::ErlangInstall.new(resource, run_context).send(:activate_kerl)
     end
@@ -91,7 +91,7 @@ describe Chef::Provider::ErlangInstall do
     end
 
     it 'builds erlang' do
-      expect(execute).to receive(:command).with(/.*\/kerl build #{version} #{version}$/)
+      expect(execute).to receive(:command).with(%r{.*/kerl build #{version} #{version}$})
       expect(execute).to receive(:run_action).with(:run)
       Chef::Provider::ErlangInstall.new(resource, run_context).send(:build_erlang)
     end
