@@ -103,7 +103,7 @@ class Chef
     end
 
     def install_bundler
-      execute = Resource::Execute.new("install bundler", run_context)
+      execute = Resource::Execute.new('install bundler', run_context)
       execute.command("#{ruby_path}/bin/gem install bundler")
       execute.environment(new_resource.environment)
       execute.run_action(:run)
@@ -114,7 +114,7 @@ class Chef
         run_context.include_recipe 'build-essential::default'
       end
 
-      # TODO extract to a _common recipe for the common deps per language install
+      # TODO: extract to a _common recipe for the common deps per language install
       if debian?
         install_package('libxml2-dev')
         install_package('libxslt-dev')
@@ -285,7 +285,7 @@ class Chef
     end
 
     def install_bundler
-      execute = Resource::Execute.new("install bundler", run_context)
+      execute = Resource::Execute.new('install bundler', run_context)
       execute.command("#{ruby_install_path}/bin/gem install bundler")
       execute.environment(new_resource.environment)
       execute.run_action(:run)

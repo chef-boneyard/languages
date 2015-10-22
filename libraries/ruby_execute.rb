@@ -33,7 +33,7 @@ class Chef
   class Provider::RubyExecuteUnix < Provider::LWRPBase
     provides :ruby_execute
 
-    action(:run) do
+    action(:execute) do
       raise "No ruby found under #{new_resource.prefix}. Please run ruby_install first." unless installed?
       execute
     end
@@ -49,10 +49,8 @@ class Chef
       "#{new_resource.prefix}/ruby-#{new_resource.version}"
     end
 
-
     def installed?
       ::File.directory?(ruby_path)
     end
-
   end
 end
