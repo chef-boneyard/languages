@@ -28,7 +28,7 @@ class Chef
     attribute :version,     kind_of: String, name_attribute: true
     attribute :environment, kind_of: Hash, default: {}
     attribute :patches,     kind_of: Array, default: []
-    attribute :prefix,      kind_of: String, default: lazy { |r| ChefConfig.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies', r.version) : "/opt/rubies/ruby-#{r.version}" }
+    attribute :prefix,      kind_of: String, default: lazy { |r| Chef::Platform.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies', r.version) : "/opt/rubies/ruby-#{r.version}" }
 
     def patch(patch)
       @patches << patch

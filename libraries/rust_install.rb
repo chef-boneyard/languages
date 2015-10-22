@@ -26,7 +26,7 @@ class Chef
 
     attribute :version, kind_of: String, name_attribute: true
     attribute :channel, kind_of: String, default: 'stable'
-    attribute :prefix, kind_of: String, default: lazy { ChefConfig.windows? ? nil : '/usr/local' }
+    attribute :prefix, kind_of: String, default: lazy { Chef::Platform.windows? ? nil : '/usr/local' }
   end
 end
 
