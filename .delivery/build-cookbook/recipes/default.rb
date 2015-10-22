@@ -11,3 +11,7 @@ chef_gem 'knife-supermarket' do
   only_if { delivery_environment == 'delivered' }
   action :install
 end
+
+chef_gem 'compat_resource' do
+  action :upgrade
+end
