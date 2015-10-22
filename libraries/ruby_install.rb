@@ -100,9 +100,8 @@ class Chef
       run_context.include_recipe 'build-essential::default'
 
       # install ruby-install
-      ruby_install_path = '/usr/local/bin/ruby-install'
-      return if Chef::Sugar::Shell.installed_at_version?(ruby_install_path, '0.4.1')
-      ruby_install = Chef::Resource::RemoteInstall.new(ruby_install_path, run_context)
+      return if Chef::Sugar::Shell.installed_at_version?('/usr/local/bin/ruby-install', '0.4.1')
+      ruby_install = Chef::Resource::RemoteInstall.new('ruby-install', run_context)
       ruby_install.source('https://codeload.github.com/postmodern/ruby-install/tar.gz/v0.4.1')
       ruby_install.version('0.4.1')
       ruby_install.checksum('1b35d2b6dbc1e75f03fff4e8521cab72a51ad67e32afd135ddc4532f443b730e')
