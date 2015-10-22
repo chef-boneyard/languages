@@ -97,7 +97,9 @@ class Chef
     end
 
     def install_dependencies
-      run_context.include_recipe 'build-essential::default'
+      recipe_eval do
+        run_context.include_recipe 'build-essential::default'
+      end
 
       # install ruby-install
       return if Chef::Sugar::Shell.installed_at_version?('/usr/local/bin/ruby-install', '0.4.1')
