@@ -42,6 +42,7 @@ describe Chef::Provider::RubyInstallUnix do
 
   before do
     allow(subject).to receive(:install_dependencies)
+    allow(subject).to receive(:install_bundler)
     allow_any_instance_of(Chef::Resource::Execute).to receive(:run_action)
   end
 
