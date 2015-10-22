@@ -26,8 +26,6 @@ describe Chef::Provider::ErlangInstall do
     Chef::Resource::ErlangInstall.new(version, run_context)
   end
 
-  let(:execute) { double(Chef::Resource::Execute) }
-
   describe '#installed_erlang_version' do
     let(:shellout) { double(stdout: "#{version} #{prefix}/erlang/#{version}") }
     let(:command) { "#{Chef::Config[:file_cache_path]}/kerl list installations" }
@@ -54,6 +52,8 @@ describe Chef::Provider::ErlangInstall do
       expect(Chef::Provider::ErlangInstall.new(resource, run_context).send(:installed_erlang_version)).to eq(false)
     end
   end
+
+  let(:execute) { double }
 
   describe '#install_kerl' do
     before do
