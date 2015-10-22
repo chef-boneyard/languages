@@ -75,7 +75,7 @@ class Chef
 
       # Need to compile the command outside of the execute resource because
       # Ruby is bad at instance_eval
-      install_command = "ruby-install --no-install-deps --install-dir #{new_resource.prefix}"
+      install_command = "ruby-install --no-install-deps --install-dir #{ruby_path}"
 
       new_resource.patches.each do |p|
         install_command << " --patch #{p}"
@@ -95,12 +95,16 @@ class Chef
     #
     # @return [true, false]
     def installed?
-      ::File.directory?(new_resource.prefix)
+      ::File.directory?(ruby_path)
+    end
+
+    def ruby_path
+      "#{new_resource.prefix}/ruby-#{new_resource.version}"
     end
 
     def install_bundler
       execute = Resource::Execute.new("install bundler", run_context)
-      execute.command("#{new_resource.prefix}/bin/gem install bundler")
+      execute.command("#{ruby_path}/bin/gem install bundler")
       execute.environment(new_resource.environment)
       execute.run_action(:run)
     end
@@ -215,7 +219,7 @@ class Chef
     end
 
     def ruby_install_path
-      new_resource.prefix
+      windows_safe_path_join(new_resource.prefix, "ruby-#{new_resource.version}")
     end
 
     def ruby_bin
