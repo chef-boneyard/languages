@@ -87,6 +87,8 @@ class Chef
       execute.command(install_command)
       execute.environment(new_resource.environment)
       execute.run_action(:run)
+
+      install_bundler
     end
 
     # Check if the given Ruby is installed in the given prefix.
@@ -96,9 +98,40 @@ class Chef
       ::File.directory?(new_resource.prefix)
     end
 
+    def install_bundler
+      execute = Resource::Execute.new("install bundler", run_context)
+      execute.command("#{new_resource.prefix}/bin/gem install bundler")
+      execute.environment(new_resource.environment)
+      execute.run_action(:run)
+    end
+
     def install_dependencies
       recipe_eval do
         run_context.include_recipe 'build-essential::default'
+      end
+
+      # TODO extract to a _common recipe for the common deps per language install
+      if debian?
+        install_package('libxml2-dev')
+        install_package('libxslt-dev')
+        install_package('zlib1g-dev')
+        install_package('ncurses-dev')
+        install_package('libssl-dev')
+      elsif freebsd?
+        install_package('textproc/libxml2')
+        install_package('textproc/libxslt')
+        install_package('devel/ncurses')
+        install_package('libssl-dev')
+      elsif mac_os_x?
+        install_package('libxml2')
+        install_package('libxslt')
+        install_package('libssl-dev')
+      elsif rhel?
+        install_package('libxml2-devel')
+        install_package('libxslt-devel')
+        install_package('ncurses-devel')
+        install_package('zlib-devel')
+        install_package('libssl-devel')
       end
 
       # install ruby-install
@@ -109,6 +142,11 @@ class Chef
       ruby_install.checksum('1b35d2b6dbc1e75f03fff4e8521cab72a51ad67e32afd135ddc4532f443b730e')
       ruby_install.install_command("make -j #{parallelism} install")
       ruby_install.run_action(:install)
+    end
+
+    def install_package(package_str)
+      pkg = Chef::Resource::Package.new(package_str, run_context)
+      pkg.run_action(:install)
     end
 
     # The number of builders to use for make. By default, this is the total
@@ -135,6 +173,7 @@ class Chef
           install_ruby
           install_devkit
           configure_ca
+          install_bundler
         end
       end
     end
@@ -239,6 +278,13 @@ class Chef
       cacerts.backup(false)
       cacerts.sensitive(true)
       cacerts.run_action(:create)
+    end
+
+    def install_bundler
+      execute = Resource::Execute.new("install bundler", run_context)
+      execute.command("#{ruby_install_path}/bin/gem install bundler")
+      execute.environment(new_resource.environment)
+      execute.run_action(:run)
     end
 
     # Check if the given Ruby is installed by directory.
