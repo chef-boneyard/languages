@@ -41,8 +41,8 @@ class Chef
     end
 
     action(:install) do
-      Chef::Log.debug("CURRENT #{current_erlang_version} DESIRED #{new_resource.version}")
-      if current_erlang_version == new_resource.version
+      Chef::Log.debug("CURRENT #{installed_erlang_version} DESIRED #{new_resource.version}")
+      if installed_erlang_version
         Chef::Log.info("erlang is up-to-date with version #{new_resource.version} -- skipping")
       else
         converge_by("Create #{new_resource}") do
@@ -57,16 +57,12 @@ class Chef
 
     protected
 
-    # TEST:  if correct version is installed, resource is logged as up-to-date and we exit. DONE
-    # TEST:  if correct version is not installed, we install it
-    # What happens if no version of erlang is installed?  DONE
-
-    def current_erlang_version
+    def installed_erlang_version
       version_cmd = Mixlib::ShellOut.new("#{Config[:file_cache_path]}/kerl list installations")
       version_cmd.run_command
-      return new_resource.version if version_cmd.stdout.include?("#{new_resource.version} #{new_resource.prefix}/erlang/#{new_resource.version}")
+      version_cmd.stdout.include?("#{new_resource.version} #{new_resource.prefix}/erlang/#{new_resource.version}")
     rescue Errno::ENOENT
-      'NONE'
+      false
     end
 
     def install_dependencies

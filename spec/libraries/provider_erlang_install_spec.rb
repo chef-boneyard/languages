@@ -19,6 +19,7 @@ require 'spec_helper'
 
 describe Chef::Provider::ErlangInstall do
   let(:version) { '18.1' }
+  let(:prefix) { '/usr/local' }
   let(:node) { stub_node(platform: 'ubuntu', version: '14.04') }
   let(:run_context) { Chef::RunContext.new(node, {}, nil) }
   let(:resource) do
@@ -26,6 +27,33 @@ describe Chef::Provider::ErlangInstall do
   end
 
   let(:execute) { double(Chef::Resource::Execute) }
+
+  describe '#installed_erlang_version' do
+    let(:shellout) { double(stdout: "#{version} #{prefix}/erlang/#{version}") }
+    let(:command) { "#{Chef::Config[:file_cache_path]}/kerl list installations" }
+
+    it 'returns new_resource.version' do
+      expect(Mixlib::ShellOut).to receive(:new).with(command).and_return(shellout)
+      expect(shellout).to receive(:run_command)
+      expect(Chef::Provider::ErlangInstall.new(resource, run_context).send(:installed_erlang_version)).to eq(true)
+    end
+
+    context 'installed version is different' do
+      let(:shellout) { double(stdout: "foo #{prefix}/erlang/foo") }
+
+      it 'returns a different version' do
+        expect(Mixlib::ShellOut).to receive(:new).with(command).and_return(shellout)
+        expect(shellout).to receive(:run_command)
+        expect(Chef::Provider::ErlangInstall.new(resource, run_context).send(:installed_erlang_version)).to eq(false)
+      end
+    end
+
+    it 'kerl is not installed' do
+      expect(Mixlib::ShellOut).to receive(:new).with(command).and_return(shellout)
+      expect(shellout).to receive(:run_command).and_raise(Errno::ENOENT)
+      expect(Chef::Provider::ErlangInstall.new(resource, run_context).send(:installed_erlang_version)).to eq(false)
+    end
+  end
 
   describe '#install_kerl' do
     before do
@@ -36,7 +64,7 @@ describe Chef::Provider::ErlangInstall do
     it 'installs kerl' do
       expect(execute).to receive(:source)
         .with('https://raw.githubusercontent.com/spawngrid/kerl/master/kerl')
-      expect(execute).to receive(:path).with(%r{.*/kerl$})
+      expect(execute).to receive(:path).with(/.*\/kerl$/)
       expect(execute).to receive(:mode).with('0755')
       expect(execute).to receive(:run_action).with(:create)
       Chef::Provider::ErlangInstall.new(resource, run_context).send(:install_kerl)
@@ -50,7 +78,7 @@ describe Chef::Provider::ErlangInstall do
     end
 
     it 'activates kerl' do
-      expect(execute).to receive(:command).with(%r{.*/kerl update releases$})
+      expect(execute).to receive(:command).with(/.*\/kerl update releases$/)
       expect(execute).to receive(:run_action).with(:run)
       Chef::Provider::ErlangInstall.new(resource, run_context).send(:activate_kerl)
     end
@@ -63,7 +91,7 @@ describe Chef::Provider::ErlangInstall do
     end
 
     it 'builds erlang' do
-      expect(execute).to receive(:command).with(%r{.*/kerl build #{version} #{version}$})
+      expect(execute).to receive(:command).with(/.*\/kerl build #{version} #{version}$/)
       expect(execute).to receive(:run_action).with(:run)
       Chef::Provider::ErlangInstall.new(resource, run_context).send(:build_erlang)
     end
@@ -76,8 +104,6 @@ describe Chef::Provider::ErlangInstall do
     end
 
     context 'default prefix directory' do
-      let(:prefix) { '/usr/local' }
-
       it 'installs at prefix directory' do
         expect(execute).to receive(:command)
           .with(%r{.*/kerl install #{version} #{prefix}/erlang/#{version}$})
