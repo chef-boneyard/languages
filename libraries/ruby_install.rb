@@ -20,7 +20,7 @@ require_relative '_helper'
 
 class Chef
   class Resource::RubyInstall < Resource::LWRPBase
-    self.resource_name = :ruby_install
+    resource_name :ruby_install
 
     actions :install
     default_action :install

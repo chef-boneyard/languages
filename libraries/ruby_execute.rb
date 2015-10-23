@@ -22,7 +22,7 @@ require_relative 'language_execute'
 
 class Chef
   class Resource::RubyExecute < Resource::LanguageExecute
-    self.resource_name = :ruby_execute
+    resource_name :ruby_execute
   end
 
   class Provider::RubyExecute < Provider::LWRPBase
