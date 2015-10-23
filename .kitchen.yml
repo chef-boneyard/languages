@@ -4,6 +4,7 @@ driver:
 
 provisioner:
   name: chef_zero
+  data_path: test/shared
 
 platforms:
   - name: ubuntu-12.04

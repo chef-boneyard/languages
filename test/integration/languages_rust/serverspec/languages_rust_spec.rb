@@ -1,8 +1,4 @@
-require 'serverspec'
-require 'pathname'
-require 'tmpdir'
-
-require_relative 'spec_helper'
+require_relative '../../../kitchen/data/spec_helper'
 
 rust_path = if os[:family] == 'windows'
               '& "C:\Program Files\Rust nightly 1.5\bin\rustc"'
