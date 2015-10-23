@@ -49,6 +49,7 @@ class Chef
           install_dependencies
           install_kerl
           activate_kerl
+          configure_kerl
           build_erlang
           install_erlang
         end
@@ -66,16 +67,17 @@ class Chef
     end
 
     def install_dependencies
+      recipe_eval do
+        run_context.include_recipe 'build-essential::default'
+      end
+
       # from http://docs.basho.com/riak/latest/ops/building/installing/erlang/
-      deps = %w(curl build-essential autoconf libncurses5-dev openssl libssl-dev fop xsltproc unixodbc-dev git) if debian?
-      deps = %w(gcc gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf java-1.8.0-openjdk-devel git) if rhel?
+      deps = %w(curl autoconf libncurses5-dev openssl libssl-dev fop xsltproc unixodbc-dev git) if debian?
+      deps = %w(curl glibc-devel ncurses-devel openssl-devel autoconf java-1.8.0-openjdk-devel git) if rhel?
 
       deps.each do |dep|
         install_package(dep)
       end
-
-      dir = Chef::Resource::Directory.new('erlang', run_context)
-      dir.run_action(:create)
     end
 
     def install_package(package_name)
@@ -86,7 +88,7 @@ class Chef
 
     def install_kerl
       kerlfile = Chef::Resource::RemoteFile.new('kerl', run_context)
-      kerlfile.source('https://raw.githubusercontent.com/spawngrid/kerl/master/kerl')
+      kerlfile.source('https://raw.githubusercontent.com/spawngrid/kerl/4e7c4349ddcd46ac11cd4cd50bfbda25f1f11ca2/kerl')
       kerlfile.path("#{Config[:file_cache_path]}/kerl")
       kerlfile.mode('0755')
       kerlfile.run_action(:create)
@@ -98,16 +100,27 @@ class Chef
       activate_cmd.run_action(:run)
     end
 
+    def configure_kerl
+      # kerl only supports setting KERL_BASE_DIR via a .kerlrc
+      kerl_content = <<-EOH.gsub(/^ {8}/, '')
+        KERL_DOWNLOAD_DIR=#{Config[:file_cache_path]}/#{new_resource.version}
+        KERL_BUILD_DIR=#{Config[:file_cache_path]}/#{new_resource.version}
+      EOH
+
+      kerl_config = Chef::Resource::File.new('kerlrc', run_context)
+      kerl_config.path("#{ENV['HOME']}/.kerlrc")
+      kerl_config.content(kerl_content)
+      kerl_config.run_action(:create)
+    end
+
     def build_erlang
       kerl_cmd = Chef::Resource::Execute.new("build_kerl_#{new_resource.version}", run_context)
-      # kerl_cmd.command("#{Config[:file_cache_path]}/kerl build #{new_resource.version} /usr/local/#{new_resource.version}")
       kerl_cmd.command("#{Config[:file_cache_path]}/kerl build #{new_resource.version} #{new_resource.version}")
       kerl_cmd.run_action(:run)
     end
 
     def install_erlang
       install_cmd = Chef::Resource::Execute.new("install_kerl_#{new_resource.version}", run_context)
-      # install_cmd.command("#{Config[:file_cache_path]}/kerl install /usr/local/#{new_resource.version} #{new_resource.prefix}/erlang/#{new_resource.version}")
       install_cmd.command("#{Config[:file_cache_path]}/kerl install #{new_resource.version} #{new_resource.prefix}/erlang/#{new_resource.version}")
       install_cmd.run_action(:run)
     end
