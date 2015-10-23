@@ -30,7 +30,7 @@ class Chef
 
     provides :ruby_execute
 
-    action(:execute) do
+    action(:run) do
       raise "No ruby found under #{new_resource.prefix}. Please run ruby_install first." unless installed?
       execute
     end
