@@ -25,6 +25,7 @@ platforms:
 suites:
   - name: languages_node
     run_list: languages_node::default
+    excludes: windows-server-2012r2-standard
   - name: languages_ruby
     run_list: languages_ruby::default
   - name: languages_rust
