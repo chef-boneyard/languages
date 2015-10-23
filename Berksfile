@@ -9,6 +9,7 @@ end
 group :integration do
   cookbook 'apt'
   cookbook 'yum-epel'
+  fixture  'erlang'
   fixture  'rust'
   fixture  'ruby'
   fixture  'node'

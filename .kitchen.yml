@@ -1,4 +1,3 @@
----
 driver:
   name: vagrant
 
@@ -30,3 +29,6 @@ suites:
     run_list: languages_ruby::default
   - name: languages_rust
     run_list: languages_rust::default
+  - name: languages_erlang
+    run_list: languages_erlang::default
+    excludes: windows-server-2012r2-standard
