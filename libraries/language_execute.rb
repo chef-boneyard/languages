@@ -1,7 +1,7 @@
 class Chef
   class Resource::LanguageExecute < Resource::LWRPBase
-    actions :execute
-    default_action :execute
+    actions :run
+    default_action :run
 
     attribute :command, kind_of: String, name_attribute: true
     attribute :version, kind_of: String, required: true

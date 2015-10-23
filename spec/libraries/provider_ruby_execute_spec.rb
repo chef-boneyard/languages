@@ -26,7 +26,7 @@ describe Chef::Provider::RubyExecute do
   let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
   let(:version) { '2.1.7' }
   let(:prefix) { '/usr/local' }
-  let(:ruby_path) { "#{prefix}/ruby-#{version}" }
+  let(:ruby_path) { "#{prefix}/ruby-#{version}/bin" }
   let(:environment) do
     {
       'FOO' => 'BAR',
@@ -46,7 +46,7 @@ describe Chef::Provider::RubyExecute do
 
   context '#execute' do
     it 'calls Resource::Execute object command method with proper input' do
-      expect_any_instance_of(Chef::Resource::Execute).to receive(:command).with("#{ruby_path}/bin/#{command}")
+      expect_any_instance_of(Chef::Resource::Execute).to receive(:command).with(command)
       subject.send(:execute)
     end
 
@@ -73,8 +73,8 @@ describe Chef::Provider::RubyExecute do
         allow(Chef::Resource::Execute).to receive(:new).and_return(execute_resource)
       end
 
-      it 'appends the ruby path to PATH' do
-        expect(execute_resource).to receive(:environment).with(hash_including('PATH' => [ruby_path, ENV['PATH']].join(::File::PATH_SEPARATOR)))
+      it 'prepends the ruby path to PATH' do
+        expect(execute_resource).to receive(:environment).with(hash_including('PATH' => ruby_path))
         subject.send(:execute)
       end
     end
@@ -83,7 +83,7 @@ describe Chef::Provider::RubyExecute do
   context '#installed?' do
     context 'when the prefix exists' do
       before do
-        allow(File).to receive(:directory?).with("#{prefix}/ruby-#{version}").and_return(true)
+        allow(File).to receive(:directory?).with(ruby_path).and_return(true)
       end
 
       it 'returns true' do
@@ -93,7 +93,7 @@ describe Chef::Provider::RubyExecute do
 
     context 'when the prefix does not exist' do
       before do
-        allow(File).to receive(:directory?).with("#{prefix}/ruby-#{version}").and_return(false)
+        allow(File).to receive(:directory?).with(ruby_path).and_return(false)
       end
 
       it 'returns false' do
