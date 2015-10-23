@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: opscode-ci
+# Cookbook Name:: languages
 # HWRP:: rust_install
 #
 # Copyright 2014, Chef Software, Inc.
