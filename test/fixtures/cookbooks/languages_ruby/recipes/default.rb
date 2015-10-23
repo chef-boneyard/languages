@@ -25,5 +25,8 @@ end
 ruby_execute 'bundle install' do
   prefix '/usr/local/my_ruby'
   version '2.1.5'
-  environment 'BUNDLE_GEMFILE' => gemfile
+  environment(
+    'BUNDLE_GEMFILE' => gemfile,
+    'PATH' => ENV['PATH'],
+  )
 end

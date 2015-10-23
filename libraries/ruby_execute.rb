@@ -35,31 +35,35 @@ class Chef
       execute
     end
 
+    protected
+
     def execute
       with_clean_env do
         execute_resource = Resource::Execute.new("executing ruby at #{ruby_path} command", run_context)
-        cmd_str = if windows?
-                    windows_safe_path_join(ruby_path, 'bin', new_resource.command)
-                  else
-                    "#{ruby_path}/bin/#{new_resource.command}"
-                  end
-        execute_resource.command(cmd_str)
-        new_resource.environment['PATH'] = [ruby_path, ENV['PATH']].join(::File::PATH_SEPARATOR)
+        execute_resource.command(new_resource.command)
+        execute_resource.environment(environment)
 
         # Pass through some default attributes for the `execute` resource
         execute_resource.cwd(new_resource.cwd)
-        execute_resource.environment(new_resource.environment)
         execute_resource.user(new_resource.user)
         execute_resource.sensitive(new_resource.sensitive)
         execute_resource.run_action(:run)
       end
     end
 
+    def environment
+      environment = new_resource.environment || {}
+      # ensure we don't destroy the `PATH` value set by the user
+      existing_path = environment.delete('PATH')
+      environment['PATH'] = [ruby_path, existing_path].compact.join(::File::PATH_SEPARATOR)
+      environment
+    end
+
     def ruby_path
       if windows?
-        windows_safe_path_join(new_resource.prefix, "ruby-#{new_resource.version}")
+        windows_safe_path_join(new_resource.prefix, "ruby-#{new_resource.version}", 'bin')
       else
-        "#{new_resource.prefix}/ruby-#{new_resource.version}"
+        ::File.join(new_resource.prefix, "ruby-#{new_resource.version}", 'bin')
       end
     end
 
