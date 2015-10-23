@@ -2,7 +2,12 @@ require 'serverspec'
 require 'pathname'
 require 'tmpdir'
 
-if (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
+
+def windows?
+  return !(/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
+end
+
+unless windows?
   set :backend, :exec
 else
   set :backend, :cmd

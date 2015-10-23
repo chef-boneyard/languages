@@ -1,27 +1,37 @@
 require_relative '../../../kitchen/data/spec_helper'
 
-describe file '/opt/rubies/ruby-2.1.7/bin/ruby' do
-  it { should exist }
-end
+gemfile_path = windows? ? windows_safe_path_expand('~/AppData/Local/Temp/kitchen/cache/Gemfile') :
+    '/tmp/kitchen/cache'
 
-describe file '/usr/local/my_ruby/ruby-2.1.5/bin/ruby' do
-  it { should exist }
-end
+set :env, :BUNDLE_GEMFILE => gemfile_path
 
-describe command('/opt/rubies/ruby-2.1.7/bin/bundler --version') do
-  its(:exit_status) { should eq 0 }
-end
+context 'testing ruby_install resource' do
+  let(:default_prefix) { windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies') : '/opt/rubies' }
+  let(:ruby_bin) { windows? ? 'ruby.exe' : 'ruby' }
 
-describe command('/usr/local/my_ruby/ruby-2.1.5/bin/bundler --version') do
-  its(:exit_status) { should eq 0 }
-end
+  describe file windows_safe_path_join(default_prefix, 'ruby-2.1.7/bin/ruby') do
+    it { should exist }
+  end
 
-describe command("GEM_HOME='/tmp/kitchen/cache/my_gem_cache' /usr/local/my_ruby/ruby-2.1.5/bin/gem which thor") do
-  its(:exit_status) { should eq 0 }
-end
+  describe file "/usr/local/my_ruby/ruby-2.1.5/bin/#{ruby_bin}" do
+    it { should exist }
+  end
 
-describe command("BUNDLE_GEMFILE='/tmp/kitchen/cache/Gemfile' GEM_HOME='/tmp/kitchen/cache/my_gem_cache' /usr/local/my_ruby/ruby-2.1.5/bin/bundle list") do
-  its(:stdout) { should match 'nokogiri' }
+  describe command(windows_safe_path_join(default_prefix, 'ruby-2.1.7/bin/bundler') + ' --version') do
+    its(:exit_status) { should eq 0 }
+  end
+
+  describe command(windows_safe_path_expand('/usr/local/my_ruby/ruby-2.1.5/bin/bundler') + ' --version') do
+    its(:exit_status) { should eq 0 }
+  end
+
+  describe command(windows_safe_path_expand('/usr/local/my_ruby/ruby-2.1.5/bin/gem') + ' which thor') do
+    its(:exit_status) { should eq 0 }
+  end
+
+  describe command(windows_safe_path_expand('/usr/local/my_ruby/ruby-2.1.5/bin/bundle') + ' list') do
+    its(:stdout) { should match 'nokogiri' }
+  end
 end
 
 # verify that gem_home was respected
