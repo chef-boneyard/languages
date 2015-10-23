@@ -65,6 +65,7 @@ describe Chef::Provider::RubyExecute do
           run_action: nil,
           user: nil,
           group: nil,
+          sensitive: false,
         )
       end
 

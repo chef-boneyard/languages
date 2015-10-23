@@ -45,7 +45,12 @@ class Chef
                   end
         execute_resource.command(cmd_str)
         new_resource.environment['PATH'] = [ruby_path, ENV['PATH']].join(::File::PATH_SEPARATOR)
+
+        # Pass through some default attributes for the `execute` resource
+        execute_resource.cwd(new_resource.cwd)
         execute_resource.environment(new_resource.environment)
+        execute_resource.user(new_resource.user)
+        execute_resource.sensitive(new_resource.sensitive)
         execute_resource.run_action(:run)
       end
     end
