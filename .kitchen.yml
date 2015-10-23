@@ -31,5 +31,4 @@ suites:
     run_list: languages_rust::default
   - name: languages_erlang
     run_list: languages_erlang::default
-  - name: languages_erlang_prefix
-    run_list: languages_erlang::prefix
+    excludes: windows-server-2012r2-standard
