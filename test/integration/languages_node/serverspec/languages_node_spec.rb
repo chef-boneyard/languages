@@ -1,9 +1,4 @@
-require 'serverspec'
-require 'pathname'
-require 'tmpdir'
-
-require_relative 'spec_helper'
-set :backend, :exec
+require_relative '../../../kitchen/data/spec_helper'
 
 describe 'node v4.1.2' do
   nvm_path = '/usr/local/bin/nvm'

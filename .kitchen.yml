@@ -4,6 +4,7 @@ driver:
 
 provisioner:
   name: chef_zero
+  data_path: test/shared
 
 platforms:
   - name: ubuntu-12.04
@@ -22,11 +23,10 @@ platforms:
       box: chef/macosx-10.9 # private
 
 suites:
-  - name: languages_rust
-    run_list: languages_rust::default
   - name: languages_node
     run_list: languages_node::default
-  - name: languages_rust_prefix
-    run_list: languages_rust::prefix
+    excludes: windows-server-2012r2-standard
   - name: languages_ruby
     run_list: languages_ruby::default
+  - name: languages_rust
+    run_list: languages_rust::default

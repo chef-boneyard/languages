@@ -17,66 +17,66 @@
 require 'chef'
 require 'spec_helper'
 
-describe Chef::Provider::RubyInstallUnix do
-  subject { Chef::Provider::RubyInstallUnix.new(resource, run_context) }
+describe Chef::Provider::RubyExecute do
+  subject { Chef::Provider::RubyExecute.new(resource, run_context) }
 
-  let(:install_cmd) { "ruby-install --no-install-deps --install-dir #{prefix}/ruby-#{version} --patch patch1 --patch patch2 ruby #{version} -- #{Chef::Provider::RubyInstallUnix.compile_flags}" }
+  let(:command) { 'gem install json' }
 
   let(:run_context) { Chef::RunContext.new(node, {}, nil) }
   let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
   let(:version) { '2.1.7' }
-  let(:patches) { %w(patch1 patch2) }
   let(:prefix) { '/usr/local' }
+  let(:ruby_path) { "#{prefix}/ruby-#{version}" }
   let(:environment) do
     {
       'FOO' => 'BAR',
     }
   end
   let(:resource) do
-    r = Chef::Resource::RubyInstall.new(version, run_context)
+    r = Chef::Resource::RubyExecute.new(command, run_context)
     r.environment(environment)
-    r.patches(patches)
     r.prefix(prefix)
+    r.version(version)
     r
   end
 
   before do
-    allow(subject).to receive(:install_dependencies)
-    allow(subject).to receive(:install_bundler)
     allow_any_instance_of(Chef::Resource::Execute).to receive(:run_action)
   end
 
-  context '#install' do
-    # not much to test in there beyond it getting called
-    it 'calls install_dependencies' do
-      expect(subject).to receive(:install_dependencies).once
-      subject.send(:install)
-    end
-
+  context '#execute' do
     it 'calls Resource::Execute object command method with proper input' do
-      expect_any_instance_of(Chef::Resource::Execute).to receive(:command).with(install_cmd)
-      subject.send(:install)
+      expect_any_instance_of(Chef::Resource::Execute).to receive(:command).with("#{ruby_path}/bin/#{command}")
+      subject.send(:execute)
     end
 
     it 'calls Resource::Execute.run_action(:run)' do
       expect_any_instance_of(Chef::Resource::Execute).to receive(:run_action).with(:run)
-      subject.send(:install)
+      subject.send(:execute)
     end
 
-    context 'when there are no patches' do
-      let(:patches) { nil }
-      let(:install_cmd) { "ruby-install --no-install-deps --install-dir #{prefix}/ruby-#{version} ruby #{version} -- #{Chef::Provider::RubyInstallUnix.compile_flags}" }
-
-      it 'calls Resource::Execute object command method with proper input' do
-        expect_any_instance_of(Chef::Resource::Execute).to receive(:command).with(install_cmd)
-        subject.send(:install)
+    context 'when the path is set' do
+      let(:execute_resource) do
+        double(
+          Chef::Resource::Execute,
+          command: nil,
+          cwd: nil,
+          environment: nil,
+          run_action: nil,
+          user: nil,
+          group: nil,
+          sensitive: false,
+        )
       end
-    end
-  end
 
-  context '#version' do
-    it 'returns the proper version' do
-      expect(subject.send(:version)).to eq(version)
+      before do
+        allow(Chef::Resource::Execute).to receive(:new).and_return(execute_resource)
+      end
+
+      it 'appends the ruby path to PATH' do
+        expect(execute_resource).to receive(:environment).with(hash_including('PATH' => [ruby_path, ENV['PATH']].join(::File::PATH_SEPARATOR)))
+        subject.send(:execute)
+      end
     end
   end
 

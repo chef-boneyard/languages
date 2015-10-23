@@ -28,7 +28,7 @@ class Chef
     attribute :version,     kind_of: String, name_attribute: true
     attribute :environment, kind_of: Hash, default: {}
     attribute :patches,     kind_of: Array, default: []
-    attribute :prefix,      kind_of: String, default: lazy { |r| Chef::Platform.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies', r.version) : "/opt/rubies/ruby-#{r.version}" }
+    attribute :prefix,      kind_of: String, default: lazy { |r| ChefConfig.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies', r.version) : '/opt/rubies' }
 
     def patch(patch)
       @patches << patch
@@ -75,7 +75,7 @@ class Chef
 
       # Need to compile the command outside of the execute resource because
       # Ruby is bad at instance_eval
-      install_command = "ruby-install --no-install-deps --install-dir #{new_resource.prefix}"
+      install_command = "ruby-install --no-install-deps --install-dir #{ruby_path}"
 
       new_resource.patches.each do |p|
         install_command << " --patch #{p}"
@@ -87,18 +87,55 @@ class Chef
       execute.command(install_command)
       execute.environment(new_resource.environment)
       execute.run_action(:run)
+
+      install_bundler
     end
 
     # Check if the given Ruby is installed in the given prefix.
     #
     # @return [true, false]
     def installed?
-      ::File.directory?(new_resource.prefix)
+      ::File.directory?(ruby_path)
+    end
+
+    def ruby_path
+      "#{new_resource.prefix}/ruby-#{new_resource.version}"
+    end
+
+    def install_bundler
+      execute = Resource::Execute.new('install bundler', run_context)
+      execute.command("#{ruby_path}/bin/gem install bundler")
+      execute.environment(new_resource.environment)
+      execute.run_action(:run)
     end
 
     def install_dependencies
       recipe_eval do
         run_context.include_recipe 'build-essential::default'
+      end
+
+      # TODO: extract to a _common recipe for the common deps per language install
+      if debian?
+        install_package('libxml2-dev')
+        install_package('libxslt-dev')
+        install_package('zlib1g-dev')
+        install_package('ncurses-dev')
+        install_package('libssl-dev')
+      elsif freebsd?
+        install_package('textproc/libxml2')
+        install_package('textproc/libxslt')
+        install_package('devel/ncurses')
+        install_package('libssl-dev')
+      elsif mac_os_x?
+        install_package('libxml2')
+        install_package('libxslt')
+        install_package('libssl-dev')
+      elsif rhel?
+        install_package('libxml2-devel')
+        install_package('libxslt-devel')
+        install_package('ncurses-devel')
+        install_package('zlib-devel')
+        install_package('libssl-devel')
       end
 
       # install ruby-install
@@ -109,6 +146,11 @@ class Chef
       ruby_install.checksum('1b35d2b6dbc1e75f03fff4e8521cab72a51ad67e32afd135ddc4532f443b730e')
       ruby_install.install_command("make -j #{parallelism} install")
       ruby_install.run_action(:install)
+    end
+
+    def install_package(package_str)
+      pkg = Chef::Resource::Package.new(package_str, run_context)
+      pkg.run_action(:install)
     end
 
     # The number of builders to use for make. By default, this is the total
@@ -135,6 +177,7 @@ class Chef
           install_ruby
           install_devkit
           configure_ca
+          install_bundler
         end
       end
     end
@@ -176,7 +219,7 @@ class Chef
     end
 
     def ruby_install_path
-      new_resource.prefix
+      windows_safe_path_join(new_resource.prefix, "ruby-#{new_resource.version}")
     end
 
     def ruby_bin
@@ -220,14 +263,19 @@ class Chef
       execute.run_action(:run)
     end
 
+    def ssl_certs_dir
+      windows_safe_path_join(ruby_install_path, 'ssl', 'certs')
+    end
+
+    def cacert_file
+      windows_safe_path_join(ssl_certs_dir, 'cacert.pem')
+    end
+
     # Ensures a certificate authority is available and configured. See:
     #
     #   https://gist.github.com/fnichol/867550
     #
     def configure_ca
-      ssl_certs_dir = windows_safe_path_join(ruby_install_path, 'ssl', 'certs')
-      cacert_file   = windows_safe_path_join(ssl_certs_dir, 'cacert.pem')
-
       certs_dir = Resource::Directory.new(ssl_certs_dir, run_context)
       certs_dir.recursive(true)
       certs_dir.run_action(:create)
@@ -239,6 +287,15 @@ class Chef
       cacerts.backup(false)
       cacerts.sensitive(true)
       cacerts.run_action(:create)
+    end
+
+    def install_bundler
+      execute = Resource::Execute.new('install bundler', run_context)
+      gem_bin = windows_safe_path_join(ruby_install_path, 'bin', 'gem')
+      new_resource.environment['SSL_CERT_FILE'] = cacert_file
+      execute.command("#{gem_bin} install bundler")
+      execute.environment(new_resource.environment)
+      execute.run_action(:run)
     end
 
     # Check if the given Ruby is installed by directory.
