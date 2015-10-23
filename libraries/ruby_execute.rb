@@ -1,8 +1,8 @@
 #
 # Cookbook Name:: omnibus
-# HWRP:: ruby_install
+# HWRP:: ruby_execute
 #
-# Copyright 2014, Chef Software, Inc.
+# Copyright 2015, Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,20 +17,17 @@
 # limitations under the License.
 #
 
+require_relative '_helper'
+require_relative 'language_execute'
+
 class Chef
-  class Resource::RubyExecute < Resource::LWRPBase
+  class Resource::RubyExecute < Resource::LanguageExecute
     self.resource_name = :ruby_execute
-
-    actions :run
-    default_action :run
-
-    attribute :command, kind_of: String, name_attribute: true
-    attribute :version, kind_of: String
-    attribute :environment, kind_of: Hash, default: {}
-    attribute :prefix, kind_of: String
   end
 
-  class Provider::RubyExecuteUnix < Provider::LWRPBase
+  class Provider::RubyExecute < Provider::LWRPBase
+    include Languages::Helper
+
     provides :ruby_execute
 
     action(:execute) do
@@ -39,14 +36,26 @@ class Chef
     end
 
     def execute
-      execute_resource = Resource::Execute.new("executing ruby at #{ruby_path} command", run_context)
-      execute_resource.command("#{ruby_path}/bin/#{new_resource.command}")
-      execute_resource.environment(new_resource.environment)
-      execute_resource.run_action(:run)
+      with_clean_env do
+        execute_resource = Resource::Execute.new("executing ruby at #{ruby_path} command", run_context)
+        cmd_str = if windows?
+                    windows_safe_path_join(ruby_path, 'bin', new_resource.command)
+                  else
+                    "#{ruby_path}/bin/#{new_resource.command}"
+                  end
+        execute_resource.command(cmd_str)
+        new_resource.environment['PATH'] = [ruby_path, ENV['PATH']].join(::File::PATH_SEPARATOR)
+        execute_resource.environment(new_resource.environment)
+        execute_resource.run_action(:run)
+      end
     end
 
     def ruby_path
-      "#{new_resource.prefix}/ruby-#{new_resource.version}"
+      if windows?
+        windows_safe_path_join(new_resource.prefix, "ruby-#{new_resource.version}")
+      else
+        "#{new_resource.prefix}/ruby-#{new_resource.version}"
+      end
     end
 
     def installed?

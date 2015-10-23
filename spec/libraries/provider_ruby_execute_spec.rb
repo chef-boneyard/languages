@@ -17,8 +17,8 @@
 require 'chef'
 require 'spec_helper'
 
-describe Chef::Provider::RubyExecuteUnix do
-  subject { Chef::Provider::RubyExecuteUnix.new(resource, run_context) }
+describe Chef::Provider::RubyExecute do
+  subject { Chef::Provider::RubyExecute.new(resource, run_context) }
 
   let(:command) { 'gem install json' }
 
@@ -26,6 +26,7 @@ describe Chef::Provider::RubyExecuteUnix do
   let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
   let(:version) { '2.1.7' }
   let(:prefix) { '/usr/local' }
+  let(:ruby_path) { "#{prefix}/ruby-#{version}" }
   let(:environment) do
     {
       'FOO' => 'BAR',
@@ -45,13 +46,36 @@ describe Chef::Provider::RubyExecuteUnix do
 
   context '#execute' do
     it 'calls Resource::Execute object command method with proper input' do
-      expect_any_instance_of(Chef::Resource::Execute).to receive(:command).with("#{prefix}/ruby-#{version}/bin/#{command}")
+      expect_any_instance_of(Chef::Resource::Execute).to receive(:command).with("#{ruby_path}/bin/#{command}")
       subject.send(:execute)
     end
 
     it 'calls Resource::Execute.run_action(:run)' do
       expect_any_instance_of(Chef::Resource::Execute).to receive(:run_action).with(:run)
       subject.send(:execute)
+    end
+
+    context 'when the path is set' do
+      let(:execute_resource) do
+        double(
+          Chef::Resource::Execute,
+          command: nil,
+          cwd: nil,
+          environment: nil,
+          run_action: nil,
+          user: nil,
+          group: nil,
+        )
+      end
+
+      before do
+        allow(Chef::Resource::Execute).to receive(:new).and_return(execute_resource)
+      end
+
+      it 'appends the ruby path to PATH' do
+        expect(execute_resource).to receive(:environment).with(hash_including('PATH' => [ruby_path, ENV['PATH']].join(::File::PATH_SEPARATOR)))
+        subject.send(:execute)
+      end
     end
   end
 

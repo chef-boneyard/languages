@@ -28,7 +28,7 @@ class Chef
     attribute :version,     kind_of: String, name_attribute: true
     attribute :environment, kind_of: Hash, default: {}
     attribute :patches,     kind_of: Array, default: []
-    attribute :prefix,      kind_of: String, default: lazy { |r| Chef::Platform.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies', r.version) : "/opt/rubies/ruby-#{r.version}" }
+    attribute :prefix,      kind_of: String, default: lazy { |r| ChefConfig.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies', r.version) : '/opt/rubies' }
 
     def patch(patch)
       @patches << patch
@@ -263,14 +263,19 @@ class Chef
       execute.run_action(:run)
     end
 
+    def ssl_certs_dir
+      windows_safe_path_join(ruby_install_path, 'ssl', 'certs')
+    end
+
+    def cacert_file
+      windows_safe_path_join(ssl_certs_dir, 'cacert.pem')
+    end
+
     # Ensures a certificate authority is available and configured. See:
     #
     #   https://gist.github.com/fnichol/867550
     #
     def configure_ca
-      ssl_certs_dir = windows_safe_path_join(ruby_install_path, 'ssl', 'certs')
-      cacert_file   = windows_safe_path_join(ssl_certs_dir, 'cacert.pem')
-
       certs_dir = Resource::Directory.new(ssl_certs_dir, run_context)
       certs_dir.recursive(true)
       certs_dir.run_action(:create)
@@ -286,7 +291,9 @@ class Chef
 
     def install_bundler
       execute = Resource::Execute.new('install bundler', run_context)
-      execute.command("#{ruby_install_path}/bin/gem install bundler")
+      gem_bin = windows_safe_path_join(ruby_install_path, 'bin', 'gem')
+      new_resource.environment['SSL_CERT_FILE'] = cacert_file
+      execute.command("#{gem_bin} install bundler")
       execute.environment(new_resource.environment)
       execute.run_action(:run)
     end

@@ -24,6 +24,6 @@ describe command('/usr/local/my_ruby/ruby-2.1.5/bin/gem which thor') do
   its(:exit_status) { should eq 0 }
 end
 
-describe command("BUNDLE_GEMFILE='/tmp/Gemfile' /usr/local/my_ruby/ruby-2.1.5/bin/bundle list") do
+describe command("BUNDLE_GEMFILE='/tmp/kitchen/cache/Gemfile' /usr/local/my_ruby/ruby-2.1.5/bin/bundle list") do
   its(:stdout) { should match 'nokogiri' }
 end

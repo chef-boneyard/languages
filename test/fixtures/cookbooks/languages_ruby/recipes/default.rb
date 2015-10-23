@@ -12,9 +12,8 @@ ruby_execute 'gem install thor' do
   version '2.1.5'
 end
 
-directory '/tmp'
+gemfile = ::File.join(Chef::Config[:file_cache_path], 'Gemfile')
 
-gemfile = '/tmp/Gemfile'
 file gemfile do
   content <<EOF
 source 'https://rubygems.org'
