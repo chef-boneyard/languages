@@ -23,6 +23,17 @@ require_relative 'language_execute'
 class Chef
   class Resource::RubyExecute < Resource::LanguageExecute
     resource_name :ruby_execute
+
+    # Specifies the GEM_HOME.
+    # This prevents global gem state by always setting a
+    # default not local to global ruby installation cache.
+    # We default this to #{CWD}/gem_cache if not specified by user.
+    # This will be where ruby looks for gems, and where bundle install will
+    # install by default. So it will "just work" if the user bundle installs
+    # and bundle.
+    attribute :gem_home,
+              kind_of: String,
+              default: lazy { |r| ::File.join((r.cwd || Dir.pwd), 'gem_cache')  }
   end
 
   class Provider::RubyExecute < Provider::LWRPBase
@@ -56,6 +67,8 @@ class Chef
       # ensure we don't destroy the `PATH` value set by the user
       existing_path = environment.delete('PATH')
       environment['PATH'] = [ruby_path, existing_path].compact.join(::File::PATH_SEPARATOR)
+      environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home)
+
       environment
     end
 

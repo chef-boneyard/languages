@@ -16,10 +16,15 @@ describe command('/usr/local/my_ruby/ruby-2.1.5/bin/bundler --version') do
   its(:exit_status) { should eq 0 }
 end
 
-describe command('/usr/local/my_ruby/ruby-2.1.5/bin/gem which thor') do
+describe command("GEM_HOME='/tmp/kitchen/cache/my_gem_cache' /usr/local/my_ruby/ruby-2.1.5/bin/gem which thor") do
   its(:exit_status) { should eq 0 }
 end
 
-describe command("BUNDLE_GEMFILE='/tmp/kitchen/cache/Gemfile' /usr/local/my_ruby/ruby-2.1.5/bin/bundle list") do
+describe command("BUNDLE_GEMFILE='/tmp/kitchen/cache/Gemfile' GEM_HOME='/tmp/kitchen/cache/my_gem_cache' /usr/local/my_ruby/ruby-2.1.5/bin/bundle list") do
   its(:stdout) { should match 'nokogiri' }
+end
+
+# verify that gem_home was respected
+describe file('/tmp/bundle_show_output') do
+  its(:content) { should match %r{/tmp\/kitchen\/cache\/my_gem_cache\/gems\/nokogiri} }
 end

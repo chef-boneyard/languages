@@ -10,6 +10,7 @@ end
 ruby_execute 'gem install thor' do
   prefix '/usr/local/my_ruby'
   version '2.1.5'
+  gem_home "#{Chef::Config[:file_cache_path]}/my_gem_cache"
 end
 
 gemfile = ::File.join(Chef::Config[:file_cache_path], 'Gemfile')
@@ -25,6 +26,17 @@ end
 ruby_execute 'bundle install' do
   prefix '/usr/local/my_ruby'
   version '2.1.5'
+  gem_home "#{Chef::Config[:file_cache_path]}/my_gem_cache"
+  environment(
+    'BUNDLE_GEMFILE' => gemfile,
+    'PATH' => ENV['PATH'],
+  )
+end
+
+ruby_execute 'bundle show nokogiri > /tmp/bundle_show_output' do
+  prefix '/usr/local/my_ruby'
+  version '2.1.5'
+  gem_home "#{Chef::Config[:file_cache_path]}/my_gem_cache"
   environment(
     'BUNDLE_GEMFILE' => gemfile,
     'PATH' => ENV['PATH'],
