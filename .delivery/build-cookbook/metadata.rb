@@ -6,3 +6,4 @@ version '0.1.0'
 
 depends 'chef-sugar'
 depends 'delivery-truck'
+depends 'fancy_execute'
