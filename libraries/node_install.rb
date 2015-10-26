@@ -18,32 +18,39 @@
 #
 
 require 'chef_compat/resource'
+require 'mixlib/shellout'
 
 class Chef
   class Resource::NodeInstall < ChefCompat::Resource
     resource_name :node_install
 
-    property :node_version, kind_of: String, name_property: true
-    property :prefix, kind_of: String, default: '/usr/local/bin'
+    property :version, kind_of: String, name_property: true
+    prefix = '/opt/languages/node'
 
     action :install do
-      remote_file '/tmp/nvm_install.sh' do
+      node.run_state['nodejs'] = {
+        version: new_resource.version,
+      }
+      remote_file "#{Config[:file_cache_path]}/nvm_install.sh" do
         source 'https://raw.githubusercontent.com/creationix/nvm/v0.29.0/install.sh'
         mode '0755'
-        not_if { ::File.exist?("#{prefix}/nvm") }
+        not_if { ::File.exist?("#{Config[:file_cache_path]}/nvm.sh") }
       end
       execute 'nvm-install' do
-        command "PROFILE=/etc/profile NVM_DIR=#{prefix}/nvm /tmp/nvm_install.sh"
-        not_if { ::File.exist?("#{prefix}/nvm") }
+        command "NVM_DIR=#{Config[:file_cache_path]} #{Config[:file_cache_path]}/nvm_install.sh"
+        not_if { ::File.exist?("#{Config[:file_cache_path]}/nvm.sh") }
       end
-      converge_if_changed :node_version do
-        bash 'install-node' do
-          # gsub replaces 10+ spaces at the beginning of the line with nothing
-          code <<-CODE.gsub(/^ {10}/, '')
-            . #{prefix}/nvm/nvm.sh
-            nvm install #{node_version}
-          CODE
-        end
+      directory prefix do
+        recursive true
+      end
+      execute 'install-node' do
+        # gsub replaces 10+ spaces at the beginning of the line with nothing
+        command <<-CODE.gsub(/^ {10}/, '')
+          . #{Config[:file_cache_path]}/nvm.sh
+          nvm install #{new_resource.version}
+          NODE_PATH=$( dirname $(nvm which #{new_resource.version}))
+          cp -R $NODE_PATH/../../ #{prefix}
+        CODE
       end
     end
   end

@@ -4,7 +4,7 @@ maintainer_email 'releng@chef.io'
 license 'Apache 2.0'
 description 'Installs/Configures languages'
 long_description 'Installs/Configures languages'
-version '0.1.13'
+version '0.1.14'
 
 depends 'build-essential', '~> 2.2'
 depends 'chef-sugar',      '~> 3.1'

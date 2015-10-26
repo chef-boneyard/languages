@@ -18,28 +18,12 @@ require 'chef'
 require 'spec_helper'
 
 describe Chef::Resource::NodeInstall do
-  subject { Chef::Resource::NodeInstall.new(node_version, run_context) }
+  subject { Chef::Resource::NodeInstall.new(version, run_context) }
   let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
   let(:run_context) { Chef::RunContext.new(node, {}, nil) }
-  let(:node_version) { '4.1.2' }
-
-  it 'has a default prefix of /usr/local/bin' do
-    expect(subject.prefix).to eq('/usr/local/bin')
-  end
+  let(:version) { '4.1.2' }
 
   it 'properly sets the version' do
-    expect(subject.node_version).to eq('4.1.2')
-  end
-
-  context 'when the prefix is set to something non-default' do
-    let(:prefix) { '/opt/foo' }
-
-    before do
-      subject.prefix prefix
-    end
-
-    it 'obeys sets the prefix to the requested path' do
-      expect(subject.prefix).to eq('/opt/foo')
-    end
+    expect(subject.version).to eq('4.1.2')
   end
 end
