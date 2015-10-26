@@ -34,11 +34,11 @@ class Chef
       remote_file "#{Config[:file_cache_path]}/nvm_install.sh" do
         source 'https://raw.githubusercontent.com/creationix/nvm/v0.29.0/install.sh'
         mode '0755'
-        not_if { ::File.exist?("#{Config[:file_cache_path]}/nvm.sh") }
+        not_if { ::File.exist?('/usr/local/bin/nvm/nvm.sh') }
       end
       execute 'nvm-install' do
-        command "NVM_DIR=#{Config[:file_cache_path]} #{Config[:file_cache_path]}/nvm_install.sh"
-        not_if { ::File.exist?("#{Config[:file_cache_path]}/nvm.sh") }
+        command "NVM_DIR=/usr/local/bin/nvm #{Config[:file_cache_path]}/nvm_install.sh"
+        not_if { ::File.exist?('/usr/local/bin/nvm/nvm.sh') }
       end
       directory prefix do
         recursive true
@@ -46,7 +46,7 @@ class Chef
       execute 'install-node' do
         # gsub replaces 10+ spaces at the beginning of the line with nothing
         command <<-CODE.gsub(/^ {10}/, '')
-          . #{Config[:file_cache_path]}/nvm.sh
+          . /usr/local/bin/nvm/nvm.sh
           nvm install #{new_resource.version}
           NODE_PATH=$( dirname $(nvm which #{new_resource.version}))
           cp -R $NODE_PATH/../../ #{prefix}
