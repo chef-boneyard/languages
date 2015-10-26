@@ -5,8 +5,13 @@
     "path": ".delivery/build-cookbook"
   },
   "delivery-truck": {
+    "lint": {
+      "foodcritic": {
+        "excludes": ["spec", "test"]
+      }
+    },
     "publish": {
-      "github": "chef-cookbooks/languages"
+      "chef_server": true
     }
   },
   "skip_phases": [],
