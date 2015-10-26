@@ -1,35 +1,56 @@
 require_relative '../../../kitchen/data/spec_helper'
 
-gemfile_path = windows? ? windows_safe_path_expand('~/AppData/Local/Temp/kitchen/cache/Gemfile') :
-    '/tmp/kitchen/cache'
+def suffix(prog)
+  if windows?
+    prog == 'ruby' ? 'ruby.exe' : prog + '.bat'
+  else
+    prog
+  end
+end
 
-set :env, :BUNDLE_GEMFILE => gemfile_path
+context 'testing ruby_install on default prefix' do
+  prefix = windows? ? join_path(ENV['SYSTEMDRIVE'], 'rubies') : '/opt/rubies'
+  ruby_bin_path = join_path(prefix, 'ruby-2.1.7', 'bin')
 
-context 'testing ruby_install resource' do
-  let(:default_prefix) { windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies') : '/opt/rubies' }
-  let(:ruby_bin) { windows? ? 'ruby.exe' : 'ruby' }
-
-  describe file windows_safe_path_join(default_prefix, 'ruby-2.1.7/bin/ruby') do
+  describe file join_path(ruby_bin_path, suffix('ruby')) do
     it { should exist }
   end
 
-  describe file "/usr/local/my_ruby/ruby-2.1.5/bin/#{ruby_bin}" do
+  describe command(join_path(ruby_bin_path, suffix('bundler')) + ' --version') do
+    let(:path) { ruby_bin_path }
+    its(:exit_status) { should eq 0 }
+    its(:stdout) { should match 'Bundler' }
+  end
+end
+
+context 'testing ruby_install on alternate prefix' do
+  prefix = windows? ? join_path(ENV['SYSTEMDRIVE'], 'usr/local/my_ruby') : '/usr/local/my_ruby'
+  ruby_bin_path = join_path(prefix, 'ruby-2.1.5', 'bin')
+
+  describe file join_path(ruby_bin_path, suffix('ruby')) do
     it { should exist }
   end
 
-  describe command(windows_safe_path_join(default_prefix, 'ruby-2.1.7/bin/bundler') + ' --version') do
+  describe command(join_path(ruby_bin_path, suffix('bundler')) + ' --version') do
+    let(:path) { ruby_bin_path }
     its(:exit_status) { should eq 0 }
   end
 
-  describe command(windows_safe_path_expand('/usr/local/my_ruby/ruby-2.1.5/bin/bundler') + ' --version') do
+  describe command(join_path(ruby_bin_path, suffix('gem')) + ' which thor') do
+    let(:path) { ruby_bin_path }
     its(:exit_status) { should eq 0 }
   end
 
-  describe command(windows_safe_path_expand('/usr/local/my_ruby/ruby-2.1.5/bin/gem') + ' which thor') do
-    its(:exit_status) { should eq 0 }
-  end
+  describe command(join_path(ruby_bin_path, suffix('bundle')) + ' list') do
+    let(:path) { ruby_bin_path }
+    let(:pre_command) do
+      if windows?
+        '$env:BUNDLE_GEMFILE = "$env:TEMP\\kitchen\\cache\\Gemfile"'
+      else
+        'BUNDLE_GEMFILE=/tmp/kitchen/cache/Gemfile'
+      end
+    end
 
-  describe command(windows_safe_path_expand('/usr/local/my_ruby/ruby-2.1.5/bin/bundle') + ' list') do
     its(:stdout) { should match 'nokogiri' }
   end
 end
