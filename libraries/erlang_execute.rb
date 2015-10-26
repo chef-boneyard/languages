@@ -58,6 +58,8 @@ class Chef
       erlang_resource.command(new_resource.command)
       erlang_resource.environment(environment)
       erlang_resource.sensitive(new_resource.sensitive)
+      erlang_resource.cwd(new_resource.cwd)
+      erlang_resource.user(new_resource.user)
       erlang_resource.run_action(:run)
     end
   end

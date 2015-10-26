@@ -32,6 +32,8 @@ describe Chef::Provider::ErlangExecute do
       expect(execute).to receive(:command).with(command)
       expect(execute).to receive(:environment)
       expect(execute).to receive(:sensitive).with(false)
+      expect(execute).to receive(:cwd)
+      expect(execute).to receive(:user)
       expect(execute).to receive(:run_action).with(:run)
       expect(provider.send(:execute)).to eq(nil)
     end
