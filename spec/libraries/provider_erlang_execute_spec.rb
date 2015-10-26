@@ -7,11 +7,6 @@ describe Chef::Provider::ErlangExecute do
   let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
   let(:version) { '18.1' }
   let(:prefix) { '/usr/local' }
-  # let(:environment) do
-  #   {
-  #     'FOO' => 'BAR',
-  #   }
-  # end
   let(:execute) { double }
 
   describe '#execute' do
