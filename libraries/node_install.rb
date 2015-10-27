@@ -42,6 +42,7 @@ class Chef
       end
       directory prefix do
         recursive true
+        not_if { ::File.exist?(prefix) }
       end
       execute 'install-node' do
         # gsub replaces 10+ spaces at the beginning of the line with nothing
@@ -49,7 +50,7 @@ class Chef
           . /usr/local/bin/nvm/nvm.sh
           nvm install #{new_resource.version}
           NODE_PATH=$( dirname $(nvm which #{new_resource.version}))
-          cp -R $NODE_PATH/../../ #{prefix}
+          cp -R $NODE_PATH/../../#{new_resource.version} #{prefix}/
         CODE
       end
     end
