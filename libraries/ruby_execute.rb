@@ -32,7 +32,7 @@ class Chef
     # install by default. So it will "just work" if the user bundle installs
     # and bundle.
     attribute :gem_home,
-              kind_of: String,
+              kind_of: [String],
               default: lazy { |r| ::File.join((r.cwd || Dir.pwd), 'gem_cache')  }
   end
 
@@ -50,24 +50,36 @@ class Chef
 
     def execute
       with_clean_env do
-        execute_resource = Resource::Execute.new("executing ruby at #{ruby_path} command", run_context)
-        execute_resource.command(new_resource.command)
-        execute_resource.environment(environment)
-
+        script_resource = if Chef::Platform::windows?
+          Resource::PowershellScript.new("executing ruby at #{ruby_path} command", run_context)
+        else
+          Resource::BashScript.new("executing ruby at #{ruby_path} command", run_context)
+        end
+        script_resource.code <<-EOH
+          ls env: | Out-File -Append -FilePath ~\\log.txt -Encoding ASCII
+          echo '#{new_resource.command}' | Out-File -Append -FilePath ~\\log.txt -Encoding ASCII
+          #{new_resource.command} 2>&1 | Out-File -Append -FilePath ~\\log.txt -Encoding ASCII
+        EOH
+        script_resource.environment(environment)
+        puts ("\n\nENVIRONMENT: #{script_resource.environment}\nCOMMAND: #{new_resource.command}")
         # Pass through some default attributes for the `execute` resource
-        execute_resource.cwd(new_resource.cwd)
-        execute_resource.user(new_resource.user)
-        execute_resource.sensitive(new_resource.sensitive)
-        execute_resource.run_action(:run)
+        script_resource.cwd(new_resource.cwd) unless new_resource.cwd == ''
+        script_resource.user(new_resource.user) unless new_resource.user == ''
+        script_resource.sensitive(new_resource.sensitive)
+        script_resource.run_action(:run)
       end
     end
 
     def environment
-      environment = new_resource.environment || {}
+      environment = new_resource.environment.dup || {}
       # ensure we don't destroy the `PATH` value set by the user
-      existing_path = environment.delete('PATH')
-      environment['PATH'] = [ruby_path, existing_path].compact.join(::File::PATH_SEPARATOR)
-      environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home)
+      existing_path = environment.delete('PATH') || ENV['PATH']
+      path_var_name = Chef::Platform::windows? ? 'Path' : 'PATH'
+      environment[path_var_name] = [ruby_path, existing_path].compact.join(::File::PATH_SEPARATOR)
+
+      if new_resource.gem_home && new_resource.gem_home != ''
+        environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home)
+      end
 
       environment
     end

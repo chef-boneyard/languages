@@ -19,7 +19,6 @@
 require 'chef_compat/resource'
 
 require_relative '_helper'
-require 'yaml'
 
 class Chef
   class Resource::DevkitInstall < ChefCompat::Resource
@@ -29,7 +28,6 @@ class Chef
 
     property :version, kind_of: String, name_property: true
     property :prefix, kind_of: String, default: ::File.join(ENV['SYSTEMDRIVE'], 'devkit')
-    property :rubies, kind_of: Array, default: []
 
     def url
       if version == 'tdm-32-4.5.2-20111229-1559'
@@ -41,10 +39,6 @@ class Chef
 
     def download_path
       windows_safe_path_join(Chef::Config[:file_cache_path], ::File.basename(url))
-    end
-
-    def ruby_bin
-      windows_safe_path_join(rubies.first, 'bin', 'ruby.exe')
     end
 
     def install_path
@@ -67,16 +61,5 @@ class Chef
       end
     end
 
-    action :attach_rubies do
-      # Should this be an append?
-      file windows_safe_path_join(install_path, 'config.yml') do
-        content rubies.to_yaml
-      end
-
-      execute "install devkit for #{rubies}" do
-        command %("#{ruby_bin}" dk.rb install)
-        cwd install_path
-      end
-    end
   end
 end
