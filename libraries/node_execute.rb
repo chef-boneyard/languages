@@ -31,6 +31,7 @@ class Chef
     property :environment, kind_of: Hash, default: {}
     property :user, kind_of: [String, Integer]
     property :sensitive, kind_of: [TrueClass, FalseClass], default: false
+    property :returns, kind_of: [Integer, Array], default: 0
 
     load_current_value do
       current_value_does_not_exist! if node.run_state['nodejs'].nil?
@@ -43,6 +44,7 @@ class Chef
         environment envr
         user new_resource.user
         sensitive new_resource.sensitive
+        returns new_resource.returns
         command new_resource.command
       end
     end
