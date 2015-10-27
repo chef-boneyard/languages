@@ -1,5 +1,6 @@
 driver:
   name: vagrant
+  provider: hyperv
 
 provisioner:
   name: chef_zero
@@ -16,7 +17,8 @@ platforms:
     run_list: yum-epel::default
   - name: windows-server-2012r2-standard
     driver:
-      box: chef/windows-server-2012r2-standard
+      #box: chef/windows-server-2012r2-standard
+      box: mwrock/Windows2012R2
   - name: macosx-10.9
     driver:
       box: chef/macosx-10.9 # private
@@ -32,3 +34,5 @@ suites:
   - name: languages_erlang
     run_list: languages_erlang::default
     excludes: windows-server-2012r2-standard
+  - name: devkit
+    run_list: devkit::default

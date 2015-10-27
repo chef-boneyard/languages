@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: omnibus
+# Cookbook Name:: languages
 # HWRP:: ruby_install
 #
 # Copyright 2014, Chef Software, Inc.
@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 require_relative '_helper'
+require 'yaml'
 
 class Chef
   class Resource::RubyInstall < Resource::LWRPBase
@@ -28,13 +29,17 @@ class Chef
     attribute :version,     kind_of: String, name_attribute: true
     attribute :environment, kind_of: Hash, default: {}
     attribute :patches,     kind_of: Array, default: []
-    attribute :prefix,      kind_of: String, default: lazy { |r| ChefConfig.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies', r.version) : '/opt/rubies' }
+    attribute :prefix,      kind_of: String, default: Chef::Platform.windows? ? ::File.join(ENV['SYSTEMDRIVE'], 'rubies') : '/opt/rubies'
+    # This attribute is only meaningful on windows. It is passed
+    # through to the DevKitInstall resource.
+    attribute :devkit_path, kind_of: String, default: nil
 
     def patch(patch)
       @patches << patch
     end
   end
 
+  # TODO: Fix installed?
   class Provider::RubyInstallUnix < Provider::LWRPBase
     provides :ruby_install
 
@@ -95,7 +100,7 @@ class Chef
     #
     # @return [true, false]
     def installed?
-      ::File.directory?(ruby_path)
+      ::File.executable?("#{ruby_path}/bin/ruby")
     end
 
     def ruby_path
@@ -170,16 +175,11 @@ class Chef
     end
 
     action(:install) do
-      if installed?
-        Chef::Log.debug("#{new_resource} installed - skipping")
-      else
-        converge_by("install #{new_resource}") do
-          install_ruby
-          install_devkit
-          configure_ca
-          install_bundler
-        end
-      end
+      install_ruby
+      install_devkit
+      configure_ca
+      update_rubygems
+      install_bundler
     end
 
     protected
@@ -197,25 +197,17 @@ class Chef
     end
 
     # Determines the proper version of the DevKit based on Ruby version.
-    def devkit_url
+    def devkit_version
       # 2.0 64-bit
       if version =~ /^2\.\d\.\d.*x64$/
-        'http://cdn.rubyinstaller.org/archives/devkits/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe'
+        'mingw64-64-4.7.2-20130224-1432'
       # 2.0 32-bit
       elsif version =~ /^2\.\d\.\d.*$/
-        'http://cdn.rubyinstaller.org/archives/devkits/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe'
+        'mingw64-32-4.7.2-20130224-1151'
       # Ruby 1.8.7 and 1.9.3
       else
-        'https://github.com/downloads/oneclick/rubyinstaller/DevKit-tdm-32-4.5.2-20111229-1559-sfx.exe'
+        'tdm-32-4.5.2-20111229-1559'
       end
-    end
-
-    def devkit_download_path
-      windows_safe_path_join(Chef::Config[:file_cache_path], ::File.basename(devkit_url))
-    end
-
-    def cacerts_download_path
-      windows_safe_path_join(Chef::Config[:file_cache_path], ::File.basename(devkit_url))
     end
 
     def ruby_install_path
@@ -223,44 +215,11 @@ class Chef
     end
 
     def ruby_bin
-      windows_safe_path_join(ruby_install_path, 'bin', 'ruby')
+      windows_safe_path_join(ruby_install_path, 'bin', 'ruby.exe')
     end
 
-    # Installs the desired version of the RubyInstaller
-    def install_ruby
-      ruby_installer = Resource::RemoteFile.new("fetch ruby-#{version}", run_context)
-      ruby_installer.path(installer_download_path)
-      ruby_installer.source(installer_url)
-      ruby_installer.backup(false)
-      ruby_installer.run_action(:create)
-
-      install_command = %(#{installer_download_path} /verysilent /dir="#{ruby_install_path}" /tasks="assocfiles")
-
-      execute = Resource::Execute.new("install ruby-#{version}", run_context)
-      execute.command(install_command)
-      execute.run_action(:run)
-    end
-
-    # Installs the DevKit in the Ruby so we can compile gems with native extensions.
-    def install_devkit
-      devkit = Resource::RemoteFile.new("fetch devkit for ruby-#{version}", run_context)
-      devkit.path(devkit_download_path)
-      devkit.source(devkit_url)
-      devkit.backup(false)
-      devkit.run_action(:create)
-
-      # Generate config.yml which is used by DevKit install
-      require 'yaml'
-      config_yml = Resource::File.new(windows_safe_path_join(ruby_install_path, 'config.yml'), run_context)
-      config_yml.content([ruby_install_path].to_yaml)
-      config_yml.run_action(:create)
-
-      install_command = %(#{devkit_download_path} -y -o"#{ruby_install_path}" & "#{ruby_bin}" dk.rb install)
-
-      execute = Resource::Execute.new("install devkit for ruby-#{version}", run_context)
-      execute.command(install_command)
-      execute.cwd(ruby_install_path)
-      execute.run_action(:run)
+    def bundler_bin
+      windows_safe_path_join(ruby_install_path, 'bin', 'bundler.bat')
     end
 
     def ssl_certs_dir
@@ -271,38 +230,108 @@ class Chef
       windows_safe_path_join(ssl_certs_dir, 'cacert.pem')
     end
 
+    # Installs the desired version of the RubyInstaller
+    def install_ruby
+      if ::File.executable?(ruby_bin)
+        Chef::Log.debug("#{new_resource} ruby installed - skipping")
+        return
+      end
+      converge_by("install #{new_resource} ruby") do
+        ruby_installer = Resource::RemoteFile.new("fetch ruby-#{version}", run_context)
+        ruby_installer.path(installer_download_path)
+        ruby_installer.source(installer_url)
+        ruby_installer.backup(false)
+        ruby_installer.run_action(:create)
+
+        install_command = %(#{installer_download_path} /verysilent /dir="#{ruby_install_path}" /tasks="assocfiles")
+
+        execute = Resource::Execute.new("install ruby-#{version}", run_context)
+        execute.command(install_command)
+        execute.run_action(:run)
+      end
+    end
+
+    # Installs the DevKit in the Ruby so we can compile gems with native extensions.
+    def install_devkit
+      devkit = Resource::DevkitInstall.new(devkit_version, run_context)
+      devkit.prefix(new_resource.devkit_path) if new_resource.devkit_path
+      devkit.run_action(:install)
+
+      config_yaml = windows_safe_path_join(ruby_install_path, 'config.yml')
+      yaml_entry = ruby_install_path.gsub(::File::ALT_SEPARATOR, ::File::SEPARATOR)
+      if ::File.exist?(config_yaml) && ::YAML.load_file(config_yaml).include?(yaml_entry)
+        Chef::Log.debug("#{new_resource} ruby already associated with devkit - skipping")
+        return
+      end
+
+      converge_by("register #{new_resource} ruby with devkit") do
+        # Reload the yaml file in case it was modified by a previous resource.
+        if ::File.exist?(config_yaml)
+          append_block = Resource::RubyBlock.new('merge with existing devkit registrations', run_context)
+          append_block.block do
+            config = ::YAML.load_file(config_yaml)
+            Chef::Log.debug("{new_resource} existing devkit has config.yml: #{config}")
+            config << yaml_entry
+            ::File.open(config_yaml, 'w') { |f| f.write config.to_yaml }
+          end
+          append_block.run_action(:run)
+        else
+          config_yaml_resource = Resource::File.new(config_yaml, run_context)
+          config_yaml_resource.content([yaml_entry].to_yaml)
+          config_yaml_resource.run_action(:create)
+        end
+      end
+    end
+
     # Ensures a certificate authority is available and configured. See:
     #
     #   https://gist.github.com/fnichol/867550
     #
     def configure_ca
-      certs_dir = Resource::Directory.new(ssl_certs_dir, run_context)
-      certs_dir.recursive(true)
-      certs_dir.run_action(:create)
+      if ::File.exist?(cacert_file)
+        Chef::Log.debug("#{new_resource} ca certs installed - skipping")
+        return
+      end
+      converge_by("initialize #{new_resource} SSL CA certificate file") do
+        certs_dir = Resource::Directory.new(ssl_certs_dir, run_context)
+        certs_dir.recursive(true)
+        certs_dir.run_action(:create)
 
-      cacerts = Resource::CookbookFile.new("install cacerts bundle for ruby-#{version}", run_context)
-      cacerts.path(cacert_file)
-      cacerts.source('cacert.pem')
-      cacerts.cookbook('languages')
-      cacerts.backup(false)
-      cacerts.sensitive(true)
-      cacerts.run_action(:create)
+        cacerts = Resource::CookbookFile.new("install cacerts bundle for ruby-#{version}", run_context)
+        cacerts.path(cacert_file)
+        cacerts.source('cacert.pem')
+        cacerts.cookbook('languages')
+        cacerts.backup(false)
+        cacerts.sensitive(true)
+        cacerts.run_action(:create)
+      end
+    end
+
+    # We need the latest version of rubygems.  Older versions ship
+    # with a bad certificate file that doesn't allow you to access rubygems.
+    def update_rubygems
+      converge_by("update rubygems for #{new_resource}") do
+        execute = Resource::RubyExecute.new('gem update --system', run_context)
+        execute.version(version)
+        execute.prefix(new_resource.prefix)
+        execute.environment('SSL_CERT_FILE' => cacert_file)
+        execute.gem_home('')
+        execute.run_action(:run)
+      end
     end
 
     def install_bundler
-      execute = Resource::Execute.new('install bundler', run_context)
-      gem_bin = windows_safe_path_join(ruby_install_path, 'bin', 'gem')
-      new_resource.environment['SSL_CERT_FILE'] = cacert_file
-      execute.command("#{gem_bin} install bundler")
-      execute.environment(new_resource.environment)
-      execute.run_action(:run)
-    end
-
-    # Check if the given Ruby is installed by directory.
-    #
-    # @return [true, false]
-    def installed?
-      ::File.directory?(ruby_install_path)
+      if ::File.executable?(bundler_bin)
+        Chef::Log.debug("#{new_resource} bundler installed - skipping")
+        return
+      end
+      converge_by("install bundler for #{new_resource}") do
+        execute = Resource::RubyExecute.new('gem install bundler', run_context)
+        execute.version(version)
+        execute.prefix(new_resource.prefix)
+        execute.gem_home('')
+        execute.run_action(:run)
+      end
     end
   end
 end

@@ -32,7 +32,7 @@ class Chef
     # install by default. So it will "just work" if the user bundle installs
     # and bundle.
     attribute :gem_home,
-              kind_of: String,
+              kind_of: [String],
               default: lazy { |r| ::File.join((r.cwd || Dir.pwd), 'gem_cache')  }
   end
 
@@ -50,24 +50,51 @@ class Chef
 
     def execute
       with_clean_env do
-        execute_resource = Resource::Execute.new("executing ruby at #{ruby_path} command", run_context)
-        execute_resource.command(new_resource.command)
-        execute_resource.environment(environment)
-
+        # Explicitly set the defaults.  We want powershell on windows instead of cmd.
+        script_resource = if Chef::Platform::windows?
+          Resource::PowershellScript.new("executing ruby at #{ruby_path} command", run_context)
+        else
+          Resource::BashScript.new("executing ruby at #{ruby_path} command", run_context)
+        end
+        script_resource.code(new_resource.command)
+        script_resource.environment(environment)
         # Pass through some default attributes for the `execute` resource
-        execute_resource.cwd(new_resource.cwd)
-        execute_resource.user(new_resource.user)
-        execute_resource.sensitive(new_resource.sensitive)
-        execute_resource.run_action(:run)
+        script_resource.cwd(new_resource.cwd) unless new_resource.cwd == ''
+        script_resource.user(new_resource.user) unless new_resource.user == ''
+        script_resource.sensitive(new_resource.sensitive)
+        script_resource.run_action(:run)
       end
     end
 
     def environment
-      environment = new_resource.environment || {}
+      environment = new_resource.environment.dup || {}
       # ensure we don't destroy the `PATH` value set by the user
-      existing_path = environment.delete('PATH')
-      environment['PATH'] = [ruby_path, existing_path].compact.join(::File::PATH_SEPARATOR)
-      environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home)
+      existing_path = environment.delete('PATH') || ENV['PATH']
+      # Do not modify this unless you have, at minimum, a Level 7 powershell warlock in
+      # your party and have buffed your constitution.  Otherwise you will get instacrit.
+      # Environment variables are mostly case insensitive on windows except when they are.
+      # The conventional name for the path env var is Path, but ruby allows you to use
+      # ENV['PATH'] to access it.  Note that it is canonical to use ENV['PATH'] and most
+      # code dealing with environment variables (especially if they merge hashes), expect
+      # that capitalization.  Powershell also allows canse insensitive access to environment
+      # variables.  However, CreateProcessW (and its bretheren - which is what Mixlib uses)
+      # do not care for your puny mortal problems of case insensitivity.  They simply pass
+      # the variables you give them in the case you give them.  Launching powershell in this
+      # manner with both a PATH and Path results is extreme bouts of hilarity, nausea and
+      # existential crises.
+      #
+      # As an example, try executing this resource with the command "gci env:" (which is
+      # the standard powershell command to list all environment variables) without the line
+      # below and rejoice at the thoroughly informative and satisfying error message (on WMF 4).
+      # Note that any fix you make and any confidence you have in your fix will probably need
+      # to be checked against the reality of WMF 2, 3, 4, and 5 because we bootstrap on all such
+      # systems and we might very well be building on win2008 nodes.
+      path_var_name = Chef::Platform::windows? ? 'Path' : 'PATH'
+      environment[path_var_name] = [ruby_path, existing_path].compact.join(::File::PATH_SEPARATOR)
+
+      if new_resource.gem_home && new_resource.gem_home != ''
+        environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home)
+      end
 
       environment
     end

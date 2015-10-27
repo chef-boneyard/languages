@@ -3,13 +3,15 @@ include_recipe 'languages::default'
 
 ruby_install '2.1.7'
 
-ruby_install '2.1.5' do
-  prefix '/usr/local/my_ruby'
+custom_prefix = Chef::Platform.windows? ? 'C:/usr/local/my_ruby' : '/usr/local/my_ruby'
+
+ruby_install '2.1.6' do
+  prefix custom_prefix
 end
 
 ruby_execute 'gem install thor' do
-  prefix '/usr/local/my_ruby'
-  version '2.1.5'
+  prefix custom_prefix
+  version '2.1.6'
   gem_home "#{Chef::Config[:file_cache_path]}/my_gem_cache"
 end
 
@@ -24,8 +26,8 @@ EOF
 end
 
 ruby_execute 'bundle install' do
-  prefix '/usr/local/my_ruby'
-  version '2.1.5'
+  prefix custom_prefix
+  version '2.1.6'
   gem_home "#{Chef::Config[:file_cache_path]}/my_gem_cache"
   environment(
     'BUNDLE_GEMFILE' => gemfile,
@@ -33,9 +35,11 @@ ruby_execute 'bundle install' do
   )
 end
 
-ruby_execute 'bundle show nokogiri > /tmp/bundle_show_output' do
-  prefix '/usr/local/my_ruby'
-  version '2.1.5'
+tmp_file = ::File.join(Chef::Config[:file_cache_path], 'bundle_show_output')
+
+ruby_execute "bundle show nokogiri > #{tmp_file}" do
+  prefix custom_prefix
+  version '2.1.6'
   gem_home "#{Chef::Config[:file_cache_path]}/my_gem_cache"
   environment(
     'BUNDLE_GEMFILE' => gemfile,

@@ -12,5 +12,6 @@ class Chef
     attribute :environment, kind_of: Hash, default: {}
     attribute :user, kind_of: [String, Integer]
     attribute :sensitive, kind_of: [TrueClass, FalseClass], default: false
+#    attribute :interpreter, kind_of: String, default: Chef::Platform.windows? ? 'powershell' : 'bash'
   end
 end
