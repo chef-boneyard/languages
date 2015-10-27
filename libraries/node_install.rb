@@ -52,6 +52,7 @@ class Chef
           NODE_PATH=$( dirname $(nvm which #{new_resource.version}))
           cp -R $NODE_PATH/../../#{new_resource.version} #{prefix}/
         CODE
+        not_if { ::File.exist?("#{prefix}/#{new_resource.version}") }
       end
     end
   end
