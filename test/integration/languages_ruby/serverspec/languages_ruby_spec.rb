@@ -51,6 +51,6 @@ context 'testing ruby_install on alternate prefix' do
 
   # verify that gem_home was respected
   describe file bundler_output_file do
-    its(:content) { should match %r{/tmp\/kitchen\/cache\/my_gem_cache\/gems\/nokogiri} }
+    its(:content) { should match %r{kitchen\/cache\/my_gem_cache\/gems\/nokogiri} }
   end
 end

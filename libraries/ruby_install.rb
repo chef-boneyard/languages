@@ -267,7 +267,7 @@ class Chef
       converge_by("register #{new_resource} ruby with devkit") do
         # Reload the yaml file in case it was modified by a previous resource.
         if ::File.exist?(config_yaml)
-          append_block = Resource::RubyBlock('merge with existing devkit registrations', run_context)
+          append_block = Resource::RubyBlock.new('merge with existing devkit registrations', run_context)
           append_block.block do
             config = ::YAML.load_file(config_yaml)
             Chef::Log.debug("{new_resource} existing devkit has config.yml: #{config}")
@@ -276,7 +276,7 @@ class Chef
           end
           append_block.run_action(:run)
         else
-          config_yaml_resource = Resource::File(config_yaml, run_context)
+          config_yaml_resource = Resource::File.new(config_yaml, run_context)
           config_yaml_resource.content([yaml_entry].to_yaml)
           config_yaml_resource.run_action(:create)
         end
