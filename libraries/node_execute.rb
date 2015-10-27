@@ -32,8 +32,6 @@ class Chef
     property :user, kind_of: [String, Integer]
     property :sensitive, kind_of: [TrueClass, FalseClass], default: false
 
-    prefix = '/opt/languages/node'
-
     load_current_value do
       current_value_does_not_exist! if node.run_state['nodejs'].nil?
       version node.run_state['nodejs'][:version]
@@ -42,14 +40,24 @@ class Chef
     action :run do
       execute 'execute-node' do
         cwd new_resource.cwd
-        environment new_resource.environment
+        environment envr
         user new_resource.user
         sensitive new_resource.sensitive
-        # gsub replaces 10+ spaces at the beginning of the line with nothing
-        command <<-CODE.gsub(/^ {10}/, '')
-          #{prefix}/#{new_resource.version}/bin/#{new_resource.command}
-        CODE
+        command new_resource.command
       end
+    end
+
+    # This is called envr due to resource name collisions
+    def envr
+      environment ||= {}
+      # ensure we don't destroy the `PATH` value set by the user
+      environment['PATH'] = [node_path, ENV['PATH']].compact.join(::File::PATH_SEPARATOR)
+      environment
+    end
+
+    def node_path
+      prefix = '/opt/languages/node'
+      ::File.join(prefix, "#{version}", 'bin')
     end
   end
 end
