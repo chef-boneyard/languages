@@ -2,7 +2,7 @@
 # Cookbook Name:: languages
 # HWRP:: node_execute
 #
-# Copyright 2014, Chef Software, Inc.
+# Copyright 2015, Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,47 +17,46 @@
 # limitations under the License.
 #
 
-require 'chef_compat/resource'
-
 class Chef
-  class Resource::NodeExecute < ChefCompat::Resource
+  class Resource::NodeExecute < Resource::LanguageExecute
     resource_name :node_execute
+  end
 
-    property :command, kind_of: String, name_property: true
-    property :version, kind_of: String
+  class Provider::NodeExecute < Provider::LWRPBase
+    include Chef::Mixin::ShellOut
 
-    # Useful propertys from the `execute` resource that might need overriding
-    property :cwd, kind_of: String
-    property :environment, kind_of: Hash, default: {}
-    property :user, kind_of: [String, Integer]
-    property :sensitive, kind_of: [TrueClass, FalseClass], default: false
+    provides :node_execute
 
-    load_current_value do
-      current_value_does_not_exist! if node.run_state['nodejs'].nil?
-      version node.run_state['nodejs'][:version]
+    def whyrun_supported?
+      true
     end
 
-    action :run do
-      execute 'execute-node' do
-        cwd new_resource.cwd
-        environment envr
-        user new_resource.user
-        sensitive new_resource.sensitive
-        command new_resource.command
-      end
+    action(:run) do
+      execute_resource = Resource::Execute.new(new_resource.command, run_context)
+      execute_resource.environment(environment)
+
+      # Pass through some default attributes for the `execute` resource
+      execute_resource.cwd(new_resource.cwd)
+      execute_resource.user(new_resource.user)
+      execute_resource.returns(new_resource.returns)
+      execute_resource.sensitive(new_resource.sensitive)
+      execute_resource.run_action(:run)
     end
 
-    # This is called envr due to resource name collisions
-    def envr
-      environment ||= {}
+    protected
+
+    def environment
+      environment = new_resource.environment || {}
       # ensure we don't destroy the `PATH` value set by the user
-      environment['PATH'] = [node_path, ENV['PATH']].compact.join(::File::PATH_SEPARATOR)
+      existing_path = environment.delete('PATH')
+      environment['PATH'] = [node_path, existing_path, ENV['PATH']].compact.join(::File::PATH_SEPARATOR)
+      # `npm` gets cranky when $HOME is not set
+      # environment['HOME'] = Chef::Config[:file_cache_path] #unless environment.key?('HOME')
       environment
     end
 
     def node_path
-      prefix = '/opt/languages/node'
-      ::File.join(prefix, "#{version}", 'bin')
+      ::File.join(new_resource.prefix, 'bin')
     end
   end
 end
