@@ -69,7 +69,11 @@ class Chef
     end
 
     def install_dependencies
-      recipe_eval { run_context.include_recipe 'chef-sugar::default' }
+      recipe_eval do
+        run_context.include_recipe 'build-essential::default'
+        run_context.include_recipe 'chef-sugar::default'
+        package 'tar'
+      end
 
       return if Chef::Sugar::Shell.installed_at_version?('. #{nvm_path}/nvm.sh && nvm --version', NVM_VERSION)
       nvm_install = Chef::Resource::RemoteInstall.new('nvm', run_context)
