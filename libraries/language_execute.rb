@@ -11,6 +11,7 @@ class Chef
     attribute :cwd, kind_of: String
     attribute :environment, kind_of: Hash, default: {}
     attribute :user, kind_of: [String, Integer]
+    attribute :returns, kind_of: [Integer, Array], default: 0
     attribute :sensitive, kind_of: [TrueClass, FalseClass], default: false
   end
 end
