@@ -17,46 +17,14 @@
 # limitations under the License.
 #
 
+require_relative 'language_execute'
+
 class Chef
   class Resource::NodeExecute < Resource::LanguageExecute
     resource_name :node_execute
   end
 
-  class Provider::NodeExecute < Provider::LWRPBase
-    include Chef::Mixin::ShellOut
-
+  class Provider::NodeExecute < Provider::LanguageExecute
     provides :node_execute
-
-    def whyrun_supported?
-      true
-    end
-
-    action(:run) do
-      execute_resource = Resource::Execute.new(new_resource.command, run_context)
-      execute_resource.environment(environment)
-
-      # Pass through some default attributes for the `execute` resource
-      execute_resource.cwd(new_resource.cwd)
-      execute_resource.user(new_resource.user)
-      execute_resource.returns(new_resource.returns)
-      execute_resource.sensitive(new_resource.sensitive)
-      execute_resource.run_action(:run)
-    end
-
-    protected
-
-    def environment
-      environment = new_resource.environment || {}
-      # ensure we don't destroy the `PATH` value set by the user
-      existing_path = environment.delete('PATH')
-      environment['PATH'] = [node_path, existing_path, ENV['PATH']].compact.join(::File::PATH_SEPARATOR)
-      # `npm` gets cranky when $HOME is not set
-      # environment['HOME'] = Chef::Config[:file_cache_path] #unless environment.key?('HOME')
-      environment
-    end
-
-    def node_path
-      ::File.join(new_resource.prefix, 'bin')
-    end
   end
 end

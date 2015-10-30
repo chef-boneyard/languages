@@ -17,13 +17,11 @@
 require 'chef'
 require 'spec_helper'
 
-describe Chef::Resource::NodeInstall do
-  subject { Chef::Resource::NodeInstall.new(version, run_context) }
-  let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
-  let(:run_context) { Chef::RunContext.new(node, {}, nil) }
-  let(:version) { '4.1.2' }
+describe Chef::Resource::ErlangInstall do
+  include_context :resource_boilerplate
+  it_behaves_like :language_resource
 
-  it 'properly sets the version' do
-    expect(subject.version).to eq('4.1.2')
-  end
+  subject { Chef::Resource::ErlangInstall.new(version, run_context) }
+  let(:language) { 'erlang' }
+  let(:version) { '18.1' }
 end

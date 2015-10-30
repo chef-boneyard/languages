@@ -18,32 +18,14 @@ require 'chef'
 require 'spec_helper'
 
 describe Chef::Resource::RustInstall do
+  include_context :resource_boilerplate
+  it_behaves_like :language_resource
+
   subject { Chef::Resource::RustInstall.new(version, run_context) }
-  let(:node) { stub_node(platform: 'ubuntu', version: '14.04') }
-  let(:run_context) { Chef::RunContext.new(node, {}, nil) }
+  let(:language) { 'rust' }
   let(:version) { '1.3.0' }
 
   it 'has a default channel' do
     expect(subject.channel).to eq('stable')
   end
-
-  it 'has a default prefix' do
-    expect(subject.prefix).to eq('/usr/local')
-  end
-
-  # Not sure these tests are all that interesting
-  context 'nightly channel' do
-    let(:version) { '2015-10-03' }
-
-    it 'has version set to 2015-10-03' do
-      expect(subject.version).to eq('2015-10-03')
-    end
-
-    it 'has channel set to nightly' do
-      subject.channel('nightly')
-      expect(subject.channel).to eq('nightly')
-    end
-  end
-
-  # windows:  HOLD OFF UNTIL I TALK TO MATT.
 end

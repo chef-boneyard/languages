@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: languages
-# HWRP:: erlang_execute
+# HWRP:: rust_execute
 #
 # Copyright 2015, Chef Software, Inc.
 #
@@ -20,11 +20,22 @@
 require_relative 'language_execute'
 
 class Chef
-  class Resource::ErlangExecute < Resource::LanguageExecute
-    resource_name :erlang_execute
+  class Resource::RustExecute < Resource::LanguageExecute
+    resource_name :rust_execute
   end
 
-  class Provider::ErlangExecute < Provider::LanguageExecute
-    provides :erlang_execute
+  class Provider::RustExecute < Provider::LanguageExecute
+    provides :rust_execute
+
+    #
+    # @see Chef::Resource::LanguageExecute#environment
+    #
+    def environment
+      environment = super
+      # We run `ldconfig` when Rust is installed but we'll go ahead and
+      # set `LD_LIBRARY_PATH` just to be safe.
+      environment['LD_LIBRARY_PATH'] = ::File.join(new_resource.prefix, 'lib')
+      environment
+    end
   end
 end
