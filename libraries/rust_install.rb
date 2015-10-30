@@ -2,7 +2,7 @@
 # Cookbook Name:: opscode-ci
 # HWRP:: rust_install
 #
-# Copyright 2014, Chef Software, Inc.
+# Copyright 2015, Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,124 +18,128 @@
 #
 
 class Chef
-  class Resource::RustInstall < Resource::LWRPBase
+  class Resource::RustInstall < Resource::LanguageInstall
     resource_name :rust_install
 
-    actions :install, :uninstall
-    default_action :install
-
-    attribute :version, kind_of: String, name_attribute: true
-    attribute :channel, kind_of: String, default: 'stable'
-    attribute :prefix, kind_of: String, default: lazy { Chef::Platform.windows? ? nil : '/usr/local' }
+    attribute :channel,
+              kind_of: String,
+              equal_to: %w( stable beta nightly ),
+              default: 'stable'
   end
 end
 
 class Chef
-  class Provider::RustInstall < Provider::LWRPBase
-    require 'date'
-    require_relative '_helper'
-    include Languages::Helper
-
+  class Provider::RustInstall < Provider::LanguageInstall
     provides :rust_install
 
-    def whyrun_supported?
-      true
+    #
+    # @see Chef::Resource::LanguageInstall#installed?
+    #
+    def installed?
+      installed_at_version?(::File.join(new_resource.prefix, 'bin', 'rustc'), new_resource.version)
     end
 
-    action(:install) do
-      if current_rust_version == new_resource.version
-        Chef::Log.info("#{new_resource} is up-to-date - skipping")
+    #
+    # @see Chef::Resource::LanguageInstall#install_dependencies?
+    #
+    def install_dependencies
+      super
+
+      # install the rustup script
+      rustup_install = Resource::RemoteFile.new(rustup_path, run_context)
+      rustup_install.source('https://static.rust-lang.org/rustup.sh')
+      rustup_install.mode('0755')
+      rustup_install.sensitive(true)
+      rustup_install.run_action(:create)
+    end
+
+    #
+    # @see Chef::Resource::LanguageInstall#install
+    #
+    def install
+      install_rust = Resource::Execute.new("install rust-#{new_resource.version}", run_context)
+      install_rust.command("#{rustup_path} #{rustup_flags}")
+      install_rust.run_action(:run)
+
+      # create ldconfig file
+      ldconfig_conf = Chef::Resource::File.new("/etc/ld.so.conf.d/rust-#{new_resource.version}.conf", run_context)
+      ldconfig_conf.content(::File.join(new_resource.prefix, 'lib'))
+      ldconfig_conf.sensitive(true)
+      ldconfig_conf.run_action(:create)
+
+      # update ldconfig cache
+      ldconfig_update = Resource::Execute.new('ldconfig', run_context)
+      ldconfig_update.run_action(:run)
+    end
+
+    private
+
+    def rustup_path
+      ::File.join(Chef::Config[:file_cache_path], 'rustup.sh')
+    end
+
+    def rustup_flags
+      flags = [
+        "--prefix=#{new_resource.prefix}",
+        # `sudo` causes issues on EL7 and CCRs should already be
+        # run with elevated privileges.
+        '--disable-sudo',
+        '--yes',
+      ]
+
+      if new_resource.version =~ /\d{4}-\d{2}-\d{2}/
+        flags << "--channel=#{new_resource.channel}"
+        flags << "--date=#{new_resource.version}"
       else
-        converge_by("Create #{new_resource}") do
-          install_rust
-        end
+        flags << "--revision=#{new_resource.version}"
       end
-    end
 
-    protected
-
-    #
-    # Current version of rust installed
-    #
-    # @return String
-    #
-    def current_rust_version
-      version_cmd = Mixlib::ShellOut.new("#{new_resource.prefix}/bin/rustc --version")
-      version_cmd.run_command
-      version_cmd.stdout.split.last[0..-2]
-    rescue Errno::ENOENT
-      'NONE'
-    end
-
-    def install_rust
-      fetch_rust_installer
-      run_rust_installer
-    end
-
-    def install_curl
-      return if mac_os_x?
-      package = Resource::Package.new('curl', run_context)
-      package.package_name('curl')
-      package.run_action(:install)
-    end
-
-    def fetch_rust_installer
-      rust_installer = Resource::RemoteFile.new('rust_installer', run_context)
-      rust_installer.path("#{Config[:file_cache_path]}/rustup.sh")
-      rust_installer.source('https://static.rust-lang.org/rustup.sh')
-      rust_installer.run_action(:create)
-    end
-
-    def rustup_cmd
-      cmd = ['bash',
-             "#{Config[:file_cache_path]}/rustup.sh",
-             "--channel=#{new_resource.channel}",
-             "--prefix=#{new_resource.prefix}",
-             "--date=#{new_resource.version}",
-             '--yes'].join(' ')
-
-      # Assumes OS X is a dev machine.
-      cmd << ' --disable-sudo' if mac_os_x?
-      cmd
-    end
-
-    def run_rust_installer
-      execute = Resource::Execute.new("install_rust_#{new_resource.version}", run_context)
-      execute.command(rustup_cmd)
-      execute.run_action(:run)
+      flags.join(' ')
     end
   end
 
   class Provider::RustInstallWindows < Provider::RustInstall
-    require_relative '_helper'
-    include Languages::Helper
-
     provides :rust_install, platform_family: 'windows'
 
-    protected
-
     #
-    # Current version of rust installed
+    # @see Chef::Resource::LanguageInstall#installed?
     #
-    # @return String
-    #
-    def current_rust_version
-      version_cmd = Mixlib::ShellOut.new('rustc.exe --version')
-      version_cmd.run_command
-      # Is Mixlib:ShellOut eating errno on Windows?
-      # `` raised Errno::ENOENT on Windows as it did on *nix
-      return 'NONE' if version_cmd.stderr.include?('is not recognized as an internal or external command')
-      version_cmd.stdout.split.last[0..-2]
+    def installed?
+      ::File.exist?(::File.join(new_resource.prefix, 'bin', 'rustc.exe'))
     end
 
-    def install_rust
-      Chef::Log.info("The 'prefix' parameter currently no-ops on Windows.") unless new_resource.prefix.nil?
-      package = Resource::WindowsPackage.new('rust', run_context)
-      # Note 1:  Assumes we will always use the 64-bit environment for rust.
-      # Note 2:  Drops prefix on the floor.
-      package.source("https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi")
-      package.options('ADDLOCAL=Rustc,Gcc,Docs,Cargo,Path')
-      package.run_action(:install)
+    #
+    # @see Chef::Resource::LanguageInstall#install_dependencies
+    #
+    def install_dependencies
+      # nothing to do here
+    end
+
+    #
+    # @see Chef::Resource::LanguageInstall#install
+    #
+    def install
+      rust_installer = Resource::WindowsPackage.new('rust', run_context)
+      rust_installer.source(installer_url)
+      rust_installer.options(installer_options)
+      rust_installer.run_action(:install)
+    end
+
+    private
+
+    def installer_options
+      [
+        'ADDLOCAL=Rustc,Gcc,Docs,Cargo,Path',
+        "INSTALLDIR=#{windows_safe_path_expand(new_resource.prefix)}",
+      ].join(' ')
+    end
+
+    def installer_url
+      if new_resource.version =~ /\d{4}-\d{2}-\d{2}/
+        "https://static.rust-lang.org/dist/#{new_resource.version}/rust-#{new_resource.channel}-x86_64-pc-windows-gnu.msi"
+      else
+        "https://static.rust-lang.org/dist/rust-#{new_resource.version}-x86_64-pc-windows-gnu.msi"
+      end
     end
   end
 end
