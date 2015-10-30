@@ -1,30 +1,32 @@
 require_relative '../../../kitchen/data/spec_helper'
 
-describe file '/opt/rubies/ruby-2.1.7/bin/ruby' do
-  it { should exist }
+default_prefix_ruby   = File.join(default_prefix_base, 'ruby', '2.1.7')
+alternate_prefix_ruby = windows? ? 'C:/ruby' : '/usr/local'
+
+describe command(File.join(default_prefix_ruby, 'bin', 'ruby') + ' --version') do
+  its(:stdout) { should match '2.1.7' }
 end
 
-describe file '/usr/local/my_ruby/ruby-2.1.5/bin/ruby' do
-  it { should exist }
-end
-
-describe command('/opt/rubies/ruby-2.1.7/bin/bundler --version') do
+describe command(File.join(default_prefix_ruby, 'bin', 'bundle') + ' --version') do
   its(:exit_status) { should eq 0 }
 end
 
-describe command('/usr/local/my_ruby/ruby-2.1.5/bin/bundler --version') do
+describe command(File.join(alternate_prefix_ruby, 'bin', 'ruby') + ' --version') do
+  its(:stdout) { should match '2.1.5' }
+end
+
+describe command(File.join(alternate_prefix_ruby, 'bin', 'bundle') + ' --version') do
   its(:exit_status) { should eq 0 }
 end
 
-describe command("GEM_HOME='/tmp/kitchen/cache/my_gem_cache' /usr/local/my_ruby/ruby-2.1.5/bin/gem which thor") do
-  its(:exit_status) { should eq 0 }
+describe file("#{chef_file_cache}/bundle_show_output") do
+  its(:content) { should match(/nokogiri/) }
 end
 
-describe command("BUNDLE_GEMFILE='/tmp/kitchen/cache/Gemfile' GEM_HOME='/tmp/kitchen/cache/my_gem_cache' /usr/local/my_ruby/ruby-2.1.5/bin/bundle list") do
-  its(:stdout) { should match 'nokogiri' }
+describe file("#{chef_file_cache}/gem_which_nokogiri_output") do
+  its(:content) { should match(/^#{default_prefix_ruby}.*nokogiri\.rb$/) }
 end
 
-# verify that gem_home was respected
-describe file('/tmp/bundle_show_output') do
-  its(:content) { should match %r{/tmp\/kitchen\/cache\/my_gem_cache\/gems\/nokogiri} }
+describe file("#{chef_file_cache}/gem_which_thor_output") do
+  its(:content) { should match(%r{^#{chef_file_cache}\/my_gem_cache\/gems.*thor\.rb$}) }
 end

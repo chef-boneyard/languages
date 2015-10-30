@@ -17,7 +17,6 @@
 # limitations under the License.
 #
 
-require_relative '_helper'
 require_relative 'language_execute'
 
 class Chef
@@ -27,61 +26,20 @@ class Chef
     # Specifies the GEM_HOME.
     # This prevents global gem state by always setting a
     # default not local to global ruby installation cache.
-    # We default this to #{CWD}/gem_cache if not specified by user.
-    # This will be where ruby looks for gems, and where bundle install will
-    # install by default. So it will "just work" if the user bundle installs
-    # and bundle.
     attribute :gem_home,
-              kind_of: String,
-              default: lazy { |r| ::File.join((r.cwd || Dir.pwd), 'gem_cache')  }
+              kind_of: String
   end
 
-  class Provider::RubyExecute < Provider::LWRPBase
-    include Languages::Helper
-
+  class Provider::RubyExecute < Provider::LanguageExecute
     provides :ruby_execute
 
-    action(:run) do
-      raise "No ruby found under #{new_resource.prefix}. Please run ruby_install first." unless installed?
-      execute
-    end
-
-    protected
-
-    def execute
-      with_clean_env do
-        execute_resource = Resource::Execute.new("executing ruby at #{ruby_path} command", run_context)
-        execute_resource.command(new_resource.command)
-        execute_resource.environment(environment)
-
-        # Pass through some default attributes for the `execute` resource
-        execute_resource.cwd(new_resource.cwd)
-        execute_resource.user(new_resource.user)
-        execute_resource.sensitive(new_resource.sensitive)
-        execute_resource.run_action(:run)
-      end
-    end
-
+    #
+    # @see Chef::Resource::LanguageExecute#environment
+    #
     def environment
-      environment = new_resource.environment || {}
-      # ensure we don't destroy the `PATH` value set by the user
-      existing_path = environment.delete('PATH')
-      environment['PATH'] = [ruby_path, existing_path].compact.join(::File::PATH_SEPARATOR)
-      environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home)
-
+      environment = super
+      environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home) unless new_resource.gem_home.nil?
       environment
-    end
-
-    def ruby_path
-      if windows?
-        windows_safe_path_join(new_resource.prefix, "ruby-#{new_resource.version}", 'bin')
-      else
-        ::File.join(new_resource.prefix, "ruby-#{new_resource.version}", 'bin')
-      end
-    end
-
-    def installed?
-      ::File.directory?(ruby_path)
     end
   end
 end
