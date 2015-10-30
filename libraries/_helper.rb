@@ -1,12 +1,20 @@
 #
-# Cookbook Name:: opscode-ci
+# Cookbook Name:: languages
 # Library:: _helper
 #
-# Author:: Tyler Cloke <tyler@chef.io>
+# Copyright 2015, Chef Software, Inc.
 #
-# Copyright 2013-2014, Chef Software, Inc.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# All rights reserved - Do Not Redistribute
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 require 'json'
@@ -42,19 +50,6 @@ module Languages
       ::File.expand_path(arg).gsub(::File::SEPARATOR, ::File::ALT_SEPARATOR)
     end
 
-    #
-    # Performs a WMI query using WIN32OLE from the Ruby Stdlib
-    #
-    # @return [String]
-    #
-    def wmi_property_from_query(wmi_property, wmi_query)
-      require 'win32ole'
-      wmi = ::WIN32OLE.connect('winmgmts://')
-      result = wmi.ExecQuery(wmi_query)
-      return nil unless result.each.count > 0
-      result.each.next.send(wmi_property)
-    end
-
     # Execute the given command, removing any Ruby-specific environment
     # variables. This is an "enhanced" version of +Bundler.with_clean_env+,
     # which only removes Bundler-specific values. We need to remove all
@@ -88,6 +83,20 @@ module Languages
       block.call
     ensure
       ENV.replace(original.to_hash)
+    end
+
+    #
+    # This wrapper around `Chef::Sugar::Shell.installed_at_version?`
+    # that returns `false' if Chef Sugar hasn't been loaded yet.
+    #
+    # @return [String]
+    #
+    def installed_at_version?(cmd, expected_version, flag = '--version')
+      if Chef.const_defined?('Sugar')
+        Chef::Sugar::Shell.installed_at_version?(cmd, expected_version, flag)
+      else
+        false
+      end
     end
   end
 end
