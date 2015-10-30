@@ -1,4 +1,4 @@
-require_relative '../../../kitchen/data/spec_helper'
+require 'spec_helper'
 
 stable_prefix_rust    = File.join(default_prefix_base, 'rust', '1.3.0')
 alternate_prefix_rust = windows? ? 'C:/rust' : '/usr/local'

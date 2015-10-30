@@ -1,4 +1,4 @@
-require_relative '../../../kitchen/data/spec_helper'
+require 'spec_helper'
 
 describe command('/opt/languages/node/v4.1.2/bin/node --version') do
   its(:stdout) { should match 'v4.1.2' }

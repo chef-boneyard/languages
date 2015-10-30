@@ -1,4 +1,4 @@
-require_relative '../../../kitchen/data/spec_helper'
+require 'spec_helper'
 
 default_prefix_ruby   = File.join(default_prefix_base, 'ruby', '2.1.7')
 alternate_prefix_ruby = windows? ? 'C:/ruby' : '/usr/local'
