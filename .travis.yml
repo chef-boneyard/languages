@@ -17,6 +17,16 @@ branches:
 services:
   - docker
 
+env:
+  matrix:
+    - LANGUAGE=erlang
+    - LANGUAGE=node
+    - LANGUAGE=ruby
+    - LANGUAGE=rust
+
+matrix:
+  fast_finish: true
+
 # Ensure we make ChefDK's Ruby the default
 before_script:
   - eval "$(/opt/chefdk/bin/chef shell-init bash)"
@@ -32,4 +42,5 @@ script:
   - /opt/chefdk/embedded/bin/foodcritic . --exclude spec
   - /opt/chefdk/embedded/bin/rspec spec
   - /opt/chefdk/embedded/bin/kitchen --version
-  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml /opt/chefdk/embedded/bin/kitchen verify ubuntu-1404
+  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml /opt/chefdk/embedded/bin/kitchen verify "languages-$LANGUAGE-ubuntu-1404"
+  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml /opt/chefdk/embedded/bin/kitchen verify "languages-$LANGUAGE-centos-7"
