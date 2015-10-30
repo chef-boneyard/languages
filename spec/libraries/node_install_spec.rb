@@ -17,13 +17,11 @@
 require 'chef'
 require 'spec_helper'
 
-describe Chef::Resource::ErlangInstall do
-  subject { Chef::Resource::ErlangInstall.new(version, run_context) }
-  let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
-  let(:run_context) { Chef::RunContext.new(node, {}, nil) }
-  let(:version) { '18.1' }
+describe Chef::Resource::NodeInstall do
+  include_context :resource_boilerplate
+  it_behaves_like :language_resource
 
-  it 'has a default prefix of /usr/local' do
-    expect(subject.prefix).to eq('/usr/local')
-  end
+  subject { Chef::Resource::NodeInstall.new(version, run_context) }
+  let(:language) { 'node' }
+  let(:version) { 'v4.1.2' }
 end
