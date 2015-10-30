@@ -32,4 +32,4 @@ script:
   - /opt/chefdk/embedded/bin/foodcritic . --exclude spec
   - /opt/chefdk/embedded/bin/rspec spec
   - /opt/chefdk/embedded/bin/kitchen --version
-  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml /opt/chefdk/embedded/bin/kitchen verify ubuntu-1204
+  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml /opt/chefdk/embedded/bin/kitchen verify ubuntu-1404
