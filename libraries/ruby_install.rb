@@ -223,11 +223,9 @@ class Chef
     end
 
     def install_bundler
-      new_resource.environment['SSL_CERT_FILE'] = cacert_file
       gem_bin = windows_safe_path_join(new_resource.prefix, 'bin', 'gem')
-
       execute = Resource::Execute.new("#{gem_bin} install bundler", run_context)
-      execute.environment(new_resource.environment)
+      execute.environment('SSL_CERT_FILE' => cacert_file)
       execute.run_action(:run)
     end
 
