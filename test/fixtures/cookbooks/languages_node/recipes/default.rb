@@ -1,9 +1,8 @@
 
+#########################################################################
+# Basic Install with Execution
+#########################################################################
 node_install 'v4.1.2'
-
-node_install 'v0.10.10' do
-  prefix '/usr/local'
-end
 
 file '/tmp/package.json' do
   content <<-EOH.gsub(/^ {10}/, '')
@@ -18,9 +17,15 @@ file '/tmp/package.json' do
   EOH
 end
 
-# Exercise run_state
 node_execute 'npm install' do
   cwd '/tmp'
   prefix '/opt/languages/node/v4.1.2'
   version 'v4.1.2'
+end
+
+#########################################################################
+# Non-default Prefix
+#########################################################################
+node_install 'v0.10.10' do
+  prefix '/usr/local'
 end

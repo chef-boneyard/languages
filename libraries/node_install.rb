@@ -17,46 +17,52 @@
 # limitations under the License.
 #
 
+require_relative 'language_install'
+
 class Chef
-  class Resource::NodeInstall < Resource::LWRPBase
+  class Resource::NodeInstall < Resource::LanguageInstall
     resource_name :node_install
-
-    actions :install
-    default_action :install
-
-    attribute :version, kind_of: String, name_attribute: true
-    attribute :prefix,  kind_of: String, default: lazy { |r| "/opt/languages/node/#{r.version}" }
   end
 
-  class Provider::NodeInstall < Provider::LWRPBase
-    include Chef::Mixin::ShellOut
-
+  class Provider::NodeInstall < Provider::LanguageInstall
     provides :node_install
 
     NVM_VERSION  = '0.29.0'.freeze
     NVM_CHECKSUM = '04f6f2710bc3b3820cde1055e735a6cd8fa71a3c9c2881c49c8653e982e0d86a'.freeze
 
-    def whyrun_supported?
-      true
-    end
-
-    action(:install) do
-      if installed?
-        Chef::Log.debug("#{new_resource} installed - skipping")
-      else
-        converge_by("install #{new_resource}") do
-          install_dependencies
-          build_node
-          install_node
-        end
-      end
-    end
-
-    protected
-
+    #
+    # @see Chef::Resource::LanguageInstall#installed?
+    #
     def installed?
-      ::File.exist?(::File.join(new_resource.prefix, 'bin', 'node'))
+      installed_at_version?(::File.join(new_resource.prefix, 'bin', 'node'), new_resource.version)
     end
+
+    #
+    # @see Chef::Resource::LanguageInstall#install_dependencies?
+    #
+    def install_dependencies
+      super
+
+      package 'tar' if debian? || rhel?
+
+      return if Chef::Sugar::Shell.installed_at_version?('. #{nvm_path}/nvm.sh && nvm --version', NVM_VERSION)
+      nvm_install = Chef::Resource::RemoteInstall.new('nvm', run_context)
+      nvm_install.source("https://codeload.github.com/creationix/nvm/tar.gz/v#{NVM_VERSION}")
+      nvm_install.version(NVM_VERSION)
+      nvm_install.checksum(NVM_CHECKSUM)
+      nvm_install.install_command('echo "nothing to install"')
+      nvm_install.run_action(:install)
+    end
+
+    #
+    # @see Chef::Resource::LanguageInstall#install
+    #
+    def install
+      build_node
+      install_node
+    end
+
+    private
 
     def nvm_path
       # This is the default location `remote_install` extracts a tarball to.
@@ -68,30 +74,14 @@ class Chef
       ::File.join(Chef::Config[:file_cache_path], "nvm-#{NVM_VERSION}")
     end
 
-    def install_dependencies
-      recipe_eval do
-        run_context.include_recipe 'build-essential::default'
-        run_context.include_recipe 'chef-sugar::default'
-        package 'tar'
-      end
-
-      return if Chef::Sugar::Shell.installed_at_version?('. #{nvm_path}/nvm.sh && nvm --version', NVM_VERSION)
-      nvm_install = Chef::Resource::RemoteInstall.new('nvm', run_context)
-      nvm_install.source("https://codeload.github.com/creationix/nvm/tar.gz/v#{NVM_VERSION}")
-      nvm_install.version(NVM_VERSION)
-      nvm_install.checksum(NVM_CHECKSUM)
-      nvm_install.install_command('echo "nothing to install"')
-      nvm_install.run_action(:install)
-    end
-
     def build_node
-      install_node = Resource::Execute.new("build node-#{new_resource.version}", run_context)
-      install_node.command(". #{nvm_path}/nvm.sh && nvm install #{new_resource.version}")
-      install_node.cwd(nvm_path)
-      install_node.environment(
+      build_node = Resource::Execute.new("build node-#{new_resource.version}", run_context)
+      build_node.command(". #{nvm_path}/nvm.sh && nvm install #{new_resource.version}")
+      build_node.cwd(nvm_path)
+      build_node.environment(
         'NVM_DIR' => nvm_path,
       )
-      install_node.run_action(:run)
+      build_node.run_action(:run)
     end
 
     def install_node
@@ -101,7 +91,7 @@ class Chef
       node_directory.run_action(:create)
 
       # copy the NodeJS that nvm compiled (or extracted) into place
-      node_build_path = shell_out!(". #{nvm_path}/nvm.sh && nvm_version_path #{new_resource.version}", env: { 'NVM_DIR' => nvm_path }).stdout.chomp
+      node_build_path = shell_out!(". #{nvm_path}/nvm.sh && nvm_version_path #{new_resource.version}", env: { 'NVM_DIR' => nvm_path }).stdout.strip
       FileUtils.cp_r("#{node_build_path}/.", "#{new_resource.prefix}/")
     end
   end
