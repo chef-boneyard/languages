@@ -1,19 +1,16 @@
-include_recipe 'chef-sugar::default'
-include_recipe 'languages::default'
 
-# default
+#########################################################################
+# Basic Install with Execution
+#########################################################################
 erlang_install '18.1'
 
-# test prefix param
-directory '/opt/languages'
-
-erlang_install '18.0' do
-  prefix '/opt/languages'
+erlang_execute "erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell > /tmp/erlang_version" do
+  version '18.1'
 end
 
-# test erlang_execute
-erlang_execute "erl --version erl -eval \'erlang:display(erlang:system_info(otp_release)), halt().\'  -noshell > /tmp/erlang_version" do
+#########################################################################
+# Non-default Prefix
+#########################################################################
+erlang_install '18.0' do
   prefix '/usr/local'
-  version '18.1'
-  environment('PATH' => ENV['PATH'])
 end
