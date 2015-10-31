@@ -39,6 +39,13 @@ class Chef
     def environment
       environment = super
       environment['GEM_HOME'] = ::File.expand_path(new_resource.gem_home) unless new_resource.gem_home.nil?
+
+      # Ensure `SSL_CERT_FILE` is set on Windows
+      if Chef::Platform.windows?
+        candidate_cacert_file = ::File.join(new_resource.prefix, 'ssl', 'certs', 'cacert.pem')
+        environment['SSL_CERT_FILE'] = candidate_cacert_file if ::File.exist?(candidate_cacert_file)
+      end
+
       environment
     end
   end
