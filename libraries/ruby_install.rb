@@ -264,7 +264,7 @@ class Chef
     end
 
     def cacert_file
-      windows_safe_path_join(new_resource.prefix, 'cacert.pem')
+      windows_safe_path_join(ssl_certs_dir, 'cacert.pem')
     end
   end
 end
