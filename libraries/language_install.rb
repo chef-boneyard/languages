@@ -77,7 +77,6 @@ class Chef
           package 'textproc/libxml2'
           package 'textproc/libxslt'
           package 'devel/ncurses'
-          package 'libssl-dev'
         when 'mac_os_x'
           package 'libxml2'
           package 'libxslt'
