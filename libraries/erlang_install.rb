@@ -93,9 +93,7 @@ class Chef
 
     # Tricks `kerl` to looking for a `.kerlrc` file in Chef's cache
     def kerl_environment
-      {
-        'HOME' => kerl_path,
-      }
+      { 'HOME' => kerl_path }
     end
 
     def build_erlang
