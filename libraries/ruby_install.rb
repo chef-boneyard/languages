@@ -52,7 +52,7 @@ class Chef
       super
 
       # install ruby-install
-      return if Chef::Sugar::Shell.installed_at_version?('/usr/local/bin/ruby-install', RUBY_INSTALL_VERSION)
+      return if Chef::Sugar::Shell.installed_at_version?("#{ruby_install_path}/bin/ruby-install", RUBY_INSTALL_VERSION)
       ruby_install = Chef::Resource::RemoteInstall.new('ruby-install', run_context)
       ruby_install.source("https://codeload.github.com/postmodern/ruby-install/tar.gz/v#{RUBY_INSTALL_VERSION}")
       ruby_install.version(RUBY_INSTALL_VERSION)
