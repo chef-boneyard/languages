@@ -30,7 +30,15 @@ end
 
 class Chef
   class Provider::RustInstall < Provider::LanguageInstall
-    provides :rust_install
+    provides :rust_install,
+             platform_family: %w(
+               aix
+               debian
+               freebsd
+               mac_os_x
+               rhel
+               solaris2
+             )
 
     #
     # @see Chef::Resource::LanguageInstall#installed?

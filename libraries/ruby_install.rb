@@ -25,7 +25,15 @@ class Chef
   end
 
   class Provider::RubyInstall < Provider::LanguageInstall
-    provides :ruby_install
+    provides :ruby_install,
+             platform_family: %w(
+               aix
+               debian
+               freebsd
+               mac_os_x
+               rhel
+               solaris2
+             )
 
     RUBY_INSTALL_VERSION  = '0.4.1'.freeze
     RUBY_INSTALL_CHECKSUM = '1b35d2b6dbc1e75f03fff4e8521cab72a51ad67e32afd135ddc4532f443b730e'.freeze
