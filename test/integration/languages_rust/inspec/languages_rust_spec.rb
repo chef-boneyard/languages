@@ -16,8 +16,8 @@ describe command(File.join(nightly_prefix_rust, 'bin', 'rustc') + ' --version') 
   its(:stdout) { should match '2015-10-03' }
 end
 
-describe file("#{chef_file_cache}/fake/target/debug/libfake.rlib"), if: !windows? do
-  it { should exist }
+describe file("#{chef_file_cache}/fake/target/debug/libfake.rlib") do
+  it { should be_file }
 end
 
 describe file("#{chef_file_cache}/fake/Cargo.lock") do

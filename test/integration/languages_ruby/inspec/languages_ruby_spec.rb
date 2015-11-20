@@ -24,9 +24,9 @@ describe file("#{chef_file_cache}/bundle_show_output") do
 end
 
 describe file("#{chef_file_cache}/gem_which_nokogiri_output") do
-  its(:content) { should match(/^#{default_prefix_ruby}.*nokogiri\.rb$/) }
+  its(:content) { should match(/^#{default_prefix_ruby}.*nokogiri\.rb/) }
 end
 
 describe file("#{chef_file_cache}/gem_which_thor_output") do
-  its(:content) { should match(%r{^#{chef_file_cache}\/my_gem_cache\/gems.*thor\.rb$}) }
+  its(:content) { should match(%r{^#{chef_file_cache}\/my_gem_cache\/gems.*thor\.rb}) }
 end
