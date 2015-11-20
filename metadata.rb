@@ -8,4 +8,5 @@ version '0.2.4'
 
 depends 'build-essential'
 depends 'chef-sugar'
+depends 'homebrew'
 depends 'remote_install'

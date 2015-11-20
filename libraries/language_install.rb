@@ -78,6 +78,7 @@ class Chef
           package 'textproc/libxslt'
           package 'devel/ncurses'
         when 'mac_os_x'
+          run_context.include_recipe 'homebrew::default'
           package 'libxml2'
           package 'libxslt'
           package 'openssl'
