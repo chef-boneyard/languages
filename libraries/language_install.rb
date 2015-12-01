@@ -67,7 +67,7 @@ class Chef
         case node.platform_family
         when 'debian'
           package 'curl'
-          package 'git'
+          package 'git-core'
           package 'libxml2-dev'
           package 'libxslt-dev'
           package 'zlib1g-dev'
