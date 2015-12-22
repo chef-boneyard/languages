@@ -60,3 +60,8 @@ suites:
   - name: languages_erlang
     run_list: languages_erlang::default
     excludes: windows-server-2012r2-standard
+  - name: languages_go
+    run_list: languages_go::default
+    excludes:
+    - freebsd-10.1
+    - freebsd-9.3
