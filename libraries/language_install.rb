@@ -91,6 +91,8 @@ class Chef
           package 'ncurses-devel'
           package 'zlib-devel'
           package 'openssl-devel'
+          package 'gettext'
+          package 'automake'
         end
       end
     end
