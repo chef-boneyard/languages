@@ -29,7 +29,7 @@ class Chef
   class Provider::ErlangInstall < Provider::LanguageInstall
     provides :erlang_install
 
-    KERL_SHA = '4e7c4349ddcd46ac11cd4cd50bfbda25f1f11ca2'.freeze
+    KERL_SHA = 'master'.freeze
 
     #
     # @see Chef::Resource::LanguageInstall#installed?
@@ -56,7 +56,7 @@ class Chef
 
       # install kerl
       kerl_install = Chef::Resource::RemoteFile.new(::File.join(kerl_path, 'kerl'), run_context)
-      kerl_install.source("https://raw.githubusercontent.com/yrashk/kerl/#{KERL_SHA}/kerl")
+      kerl_install.source("https://raw.githubusercontent.com/kerl/kerl/#{KERL_SHA}/kerl")
       kerl_install.mode('0755')
       kerl_install.sensitive(true)
       kerl_install.run_action(:create)
