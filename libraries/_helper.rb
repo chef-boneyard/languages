@@ -72,7 +72,7 @@ module Languages
     # @param [Proc] block
     #   the block to execute with the cleaned environment
     #
-    def with_clean_env(&block)
+    def with_clean_env(&_block)
       original = ENV.to_hash
 
       ENV.delete('_ORIGINAL_GEM_PATH')
@@ -80,7 +80,7 @@ module Languages
       ENV.delete_if { |k, _| k.start_with?('GEM_') }
       ENV.delete_if { |k, _| k.start_with?('RUBY') }
 
-      block.call
+      yield
     ensure
       ENV.replace(original.to_hash)
     end

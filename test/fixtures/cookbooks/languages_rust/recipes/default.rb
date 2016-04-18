@@ -34,11 +34,11 @@ end
 #########################################################################
 # Non-default Prefix
 #########################################################################
-if Chef::Platform.windows?
-  alternate_prefix = 'C:/rust'
-else
-  alternate_prefix = '/usr/local'
-end
+alternate_prefix = if Chef::Platform.windows?
+                     'C:/rust'
+                   else
+                     '/usr/local'
+                   end
 
 rust_install '2015-07-31' do
   channel 'beta'

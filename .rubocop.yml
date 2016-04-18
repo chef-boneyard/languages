@@ -26,7 +26,9 @@ RaiseArgs:
   Enabled: false
 SignalException:
   Enabled: false
-SingleSpaceBeforeFirstArg:
+Style/SpaceBeforeFirstArg:
   Enabled: false
-TrailingComma:
+Style/TrailingCommaInLiteral:
+  EnforcedStyleForMultiline: comma
+Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
