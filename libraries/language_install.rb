@@ -85,6 +85,7 @@ class Chef
         when 'rhel'
           package 'curl'
           package 'bzip2'
+          package 'file'
           package 'git'
           package 'libxml2-devel'
           package 'libxslt-devel'

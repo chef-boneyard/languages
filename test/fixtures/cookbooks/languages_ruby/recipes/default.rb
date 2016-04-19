@@ -46,11 +46,11 @@ end
 #########################################################################
 # Non-default Prefix
 #########################################################################
-if Chef::Platform.windows?
-  alternate_prefix = 'C:/ruby'
-else
-  alternate_prefix = '/usr/local'
-end
+alternate_prefix = if Chef::Platform.windows?
+                     'C:/ruby'
+                   else
+                     '/usr/local'
+                   end
 
 ruby_install '2.1.5' do
   prefix alternate_prefix
