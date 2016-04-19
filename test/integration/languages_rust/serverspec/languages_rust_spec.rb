@@ -21,5 +21,5 @@ describe file("#{chef_file_cache}/fake/target/debug/libfake.rlib"), if: !windows
 end
 
 describe file("#{chef_file_cache}/fake/Cargo.lock") do
-  its(:content) { should match 'regex' }
+  its(:content) { should match 'toml' }
 end

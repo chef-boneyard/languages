@@ -20,7 +20,7 @@ version = "0.0.1"
 authors = ["Fakey McFake <fake@chef.io>"]
 
 [dependencies]
-regex = "*"
+toml = "*"
   EOF
   sensitive true
   action :create
