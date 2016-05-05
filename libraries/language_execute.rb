@@ -53,6 +53,7 @@ class Chef
           execute_resource.cwd(new_resource.cwd)
           execute_resource.user(new_resource.user)
           execute_resource.sensitive(new_resource.sensitive)
+          execute_resource.live_stream(true) if execute_resource.respond_to?(:live_stream)
           execute_resource.run_action(:run)
         end
       end
