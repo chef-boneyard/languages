@@ -60,3 +60,5 @@ suites:
   - name: languages_erlang
     run_list: languages_erlang::default
     excludes: windows-server-2012r2-standard
+  - name: languages_fsharp
+    run_list: languages_fsharp::default
