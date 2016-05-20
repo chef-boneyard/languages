@@ -13,4 +13,5 @@ group :integration do
   fixture  'rust'
   fixture  'ruby'
   fixture  'node'
+  fixture  'go'
 end
