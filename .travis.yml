@@ -19,10 +19,10 @@ services:
 
 env:
   matrix:
-    - CHEF_VERSION=12.0.3 LANGUAGE=erlang
-    - CHEF_VERSION=12.0.3 LANGUAGE=node
-    - CHEF_VERSION=12.0.3 LANGUAGE=ruby
-    - CHEF_VERSION=12.0.3 LANGUAGE=rust
+    - CHEF_VERSION=12.1.0 LANGUAGE=erlang
+    - CHEF_VERSION=12.1.0 LANGUAGE=node
+    - CHEF_VERSION=12.1.0 LANGUAGE=ruby
+    - CHEF_VERSION=12.1.0 LANGUAGE=rust
     - CHEF_VERSION=latest LANGUAGE=erlang
     - CHEF_VERSION=latest LANGUAGE=node
     - CHEF_VERSION=latest LANGUAGE=ruby
