@@ -37,7 +37,7 @@ module Languages
     # @return [String]
     #
     def windows_safe_path_join(*args)
-      ::File.join(args).gsub(::File::SEPARATOR, ::File::ALT_SEPARATOR)
+      ::File.join(args).gsub(::File::SEPARATOR, ::File::ALT_SEPARATOR || File::SEPARATOR)
     end
 
     #
@@ -47,7 +47,7 @@ module Languages
     # @return [String]
     #
     def windows_safe_path_expand(arg)
-      ::File.expand_path(arg).gsub(::File::SEPARATOR, ::File::ALT_SEPARATOR)
+      ::File.expand_path(arg).gsub(::File::SEPARATOR, ::File::ALT_SEPARATOR || File::SEPARATOR)
     end
 
     # Execute the given command, removing any Ruby-specific environment
