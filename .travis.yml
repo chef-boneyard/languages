@@ -46,5 +46,5 @@ script:
   - /opt/chefdk/bin/foodcritic . --exclude spec
   - /opt/chefdk/embedded/bin/rspec spec
   - /opt/chefdk/bin/kitchen --version
-  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-ubuntu-1404"
-  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-centos-7"
+  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml travis_wait 45 /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-ubuntu-1404"
+  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml travis_wait 45 /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-centos-7"
