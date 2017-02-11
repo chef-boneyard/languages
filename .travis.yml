@@ -19,14 +19,22 @@ services:
 
 env:
   matrix:
-    - CHEF_VERSION=12.1.0 LANGUAGE=erlang
-    - CHEF_VERSION=12.1.0 LANGUAGE=node
-    - CHEF_VERSION=12.1.0 LANGUAGE=ruby
-    - CHEF_VERSION=12.1.0 LANGUAGE=rust
-    - CHEF_VERSION=latest LANGUAGE=erlang
-    - CHEF_VERSION=latest LANGUAGE=node
-    - CHEF_VERSION=latest LANGUAGE=ruby
-    - CHEF_VERSION=latest LANGUAGE=rust
+    - CHEF_VERSION=12.1.0 LANGUAGE=erlang OS=ubuntu-1404
+    - CHEF_VERSION=12.1.0 LANGUAGE=node OS=ubuntu-1404
+    - CHEF_VERSION=12.1.0 LANGUAGE=ruby OS=ubuntu-1404
+    - CHEF_VERSION=12.1.0 LANGUAGE=rust OS=ubuntu-1404
+    - CHEF_VERSION=latest LANGUAGE=erlang OS=ubuntu-1404
+    - CHEF_VERSION=latest LANGUAGE=node OS=ubuntu-1404
+    - CHEF_VERSION=latest LANGUAGE=ruby OS=ubuntu-1404
+    - CHEF_VERSION=latest LANGUAGE=rust OS=ubuntu-1404
+    - CHEF_VERSION=12.1.0 LANGUAGE=erlang OS=centos-7
+    - CHEF_VERSION=12.1.0 LANGUAGE=node OS=centos-7
+    - CHEF_VERSION=12.1.0 LANGUAGE=ruby OS=centos-7
+    - CHEF_VERSION=12.1.0 LANGUAGE=rust OS=centos-7
+    - CHEF_VERSION=latest LANGUAGE=erlang OS=centos-7
+    - CHEF_VERSION=latest LANGUAGE=node OS=centos-7
+    - CHEF_VERSION=latest LANGUAGE=ruby OS=centos-7
+    - CHEF_VERSION=latest LANGUAGE=rust OS=centos-7
 
 matrix:
   fast_finish: true
@@ -46,5 +54,4 @@ script:
   - /opt/chefdk/bin/foodcritic . --exclude spec
   - /opt/chefdk/embedded/bin/rspec spec
   - /opt/chefdk/bin/kitchen --version
-  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml travis_wait 45 /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-ubuntu-1404"
-  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml travis_wait 45 /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-centos-7"
+  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml travis_wait 45 /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-$OS"
