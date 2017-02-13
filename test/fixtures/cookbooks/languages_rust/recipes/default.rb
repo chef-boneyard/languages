@@ -2,12 +2,12 @@
 #########################################################################
 # Basic Install with Execution
 #########################################################################
-rust_install '1.3.0'
+rust_install '1.15.1'
 
 project_path = ::File.join(Chef::Config[:file_cache_path], 'fake')
 
 rust_execute 'cargo new fake' do
-  version '1.3.0'
+  version '1.15.1'
   cwd Chef::Config[:file_cache_path]
   not_if { ::File.exist?(project_path) }
 end
@@ -27,7 +27,7 @@ toml = "*"
 end
 
 rust_execute 'cargo build' do
-  version '1.3.0'
+  version '1.15.1'
   cwd project_path
 end
 

@@ -1,4 +1,4 @@
-#
+
 # Cookbook Name:: languages
 # HWRP:: erlang_install
 #
@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 
+require 'mixlib/shellout'
 require_relative 'language_install'
 
 class Chef
@@ -81,8 +82,15 @@ class Chef
     # @see Chef::Resource::LanguageInstall#install
     #
     def install
-      build_erlang
-      install_erlang
+      # rubocop:disable Style/GuardClause
+      if path_empty?(new_resource.prefix)
+        build_erlang
+        install_erlang
+      else
+        # kerl was updated to require the install directory to be empty or nonexistent.
+        # https://github.com/kerl/kerl/commit/d7a6709aeb63345d1fc6d86e058df7fd6e33dd4c
+        raise "Invalid prefix #{new_resource.prefix}. The prefix must be empty or nonexistent."
+      end
     end
 
     private
@@ -96,9 +104,28 @@ class Chef
       { 'HOME' => kerl_path }
     end
 
+    # @param path [String] path to check if exists or exists and is empty.
+    # @return [Boolean]
+    def path_empty?(path)
+      if Dir.exist?(path) && !(Dir.entries(path) - %w(. ..)).empty?
+        false
+      else
+        true
+      end
+    end
+
+    # @param Erlang Version [String] Check builds to see if the version has been built
+    # @return [Boolean]
+    def build_exists?(ver)
+      build = Mixlib::ShellOut.new("#{kerl_path}/kerl list builds", env: kerl_environment)
+      build.run_command
+      build.stdout =~ /#{ver}/ ? true : false
+    end
+
     def build_erlang
       build_erlang = Chef::Resource::Execute.new("#{kerl_path}/kerl build #{new_resource.version} #{new_resource.version}", run_context)
       build_erlang.environment(kerl_environment)
+      build_erlang.not_if { build_exists?(new_resource.version) }
       build_erlang.run_action(:run)
     end
 

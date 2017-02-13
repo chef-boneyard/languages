@@ -1,11 +1,11 @@
 require 'spec_helper'
 
-stable_prefix_rust    = File.join(default_prefix_base, 'rust', '1.3.0')
+stable_prefix_rust    = File.join(default_prefix_base, 'rust', '1.15.1')
 alternate_prefix_rust = windows? ? 'C:/rust' : '/usr/local'
 nightly_prefix_rust   = File.join(default_prefix_base, 'rust', '2015-10-03')
 
 describe command(File.join(stable_prefix_rust, 'bin', 'rustc') + ' --version') do
-  its(:stdout) { should match '1.3.0' }
+  its(:stdout) { should match '1.15.1' }
 end
 
 describe command(File.join(alternate_prefix_rust, 'bin', 'rustc') + ' --version') do
