@@ -1,9 +1,10 @@
 sudo: required
+distro: trusty
 
 addons:
   apt:
     sources:
-      - chef-stable-precise
+      - chef-current-trusty
     packages:
       - chefdk
 
@@ -41,17 +42,17 @@ matrix:
 
 # Ensure we make ChefDK's Ruby the default
 before_script:
-  - eval "$(/opt/chefdk/bin/chef shell-init bash)"
+  - eval "$(chef shell-init bash)"
   # We have to install chef-sugar for ChefSpec
-  - /opt/chefdk/bin/chef gem install chef-sugar
+  - chef gem install chef-sugar
   # Ensure kitchen-docker is available for testing
-  - /opt/chefdk/bin/chef gem install kitchen-docker
+  - chef gem install kitchen-docker
 script:
-  - /opt/chefdk/bin/chef --version
-  - /opt/chefdk/bin/cookstyle --version
-  - /opt/chefdk/bin/cookstyle
-  - /opt/chefdk/bin/foodcritic --version
-  - /opt/chefdk/bin/foodcritic . --exclude spec
-  - /opt/chefdk/embedded/bin/rspec spec
-  - /opt/chefdk/bin/kitchen --version
-  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml travis_wait 45 /opt/chefdk/bin/kitchen verify "languages-$LANGUAGE-$OS"
+  - chef --version
+  - cookstyle --version
+  - cookstyle
+  - foodcritic --version
+  - foodcritic . --exclude spec
+  - rspec spec
+  - kitchen --version
+  - KITCHEN_LOCAL_YAML=.kitchen.docker.yml travis_wait 45 kitchen verify "languages-$LANGUAGE-$OS"
