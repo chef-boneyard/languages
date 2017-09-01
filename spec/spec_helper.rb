@@ -17,7 +17,7 @@ RSpec.configure do |config|
 end
 
 RSpec.shared_context :resource_boilerplate do
-  let(:node) { stub_node(platform: 'ubuntu', version: '12.04') }
+  let(:node) { stub_node(platform: 'ubuntu', version: '16.04') }
   let(:run_context) { Chef::RunContext.new(node, {}, nil) }
 end
 
