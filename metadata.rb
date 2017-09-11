@@ -8,6 +8,7 @@ version '0.3.0'
 
 source_url 'https://github.com/chef-cookbooks/languages'
 issues_url 'https://github.com/chef-cookbooks/languages/issues'
+chef_version '>= 12.1'
 
 depends 'build-essential'
 depends 'chef-sugar'
