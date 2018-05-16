@@ -82,7 +82,6 @@ class Chef
     # @see Chef::Resource::LanguageInstall#install
     #
     def install
-      # rubocop:disable Style/GuardClause
       if path_empty?(new_resource.prefix)
         build_erlang
         install_erlang
