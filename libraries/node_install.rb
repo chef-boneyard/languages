@@ -45,7 +45,7 @@ class Chef
 
       package 'tar' if debian? || rhel?
 
-      return if Chef::Sugar::Shell.installed_at_version?('. #{nvm_path}/nvm.sh && nvm --version', NVM_VERSION)
+      return if Chef::Sugar::Shell.installed_at_version?(". #{nvm_path}/nvm.sh && nvm --version", NVM_VERSION)
       nvm_install = Chef::Resource::RemoteInstall.new('nvm', run_context)
       nvm_install.source("https://codeload.github.com/creationix/nvm/tar.gz/v#{NVM_VERSION}")
       nvm_install.version(NVM_VERSION)
@@ -79,7 +79,7 @@ class Chef
       build_node.command(". #{nvm_path}/nvm.sh && nvm install #{new_resource.version}")
       build_node.cwd(nvm_path)
       build_node.environment(
-        'NVM_DIR' => nvm_path,
+        'NVM_DIR' => nvm_path
       )
       build_node.run_action(:run)
     end

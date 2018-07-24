@@ -17,7 +17,7 @@ end
 ruby_execute 'bundle install' do
   version '2.1.7'
   environment(
-    'BUNDLE_GEMFILE' => gemfile,
+    'BUNDLE_GEMFILE' => gemfile
   )
 end
 
@@ -30,7 +30,7 @@ bundle_output_path = ::File.join(Chef::Config[:file_cache_path], 'bundle_show_ou
 ruby_execute "bundle show  > #{bundle_output_path}" do
   version '2.1.7'
   environment(
-    'BUNDLE_GEMFILE' => gemfile,
+    'BUNDLE_GEMFILE' => gemfile
   )
 end
 
@@ -39,7 +39,7 @@ gem_which_output = ::File.join(Chef::Config[:file_cache_path], 'gem_which_nokogi
 ruby_execute "gem which nokogiri > #{gem_which_output}" do
   version '2.1.7'
   environment(
-    'BUNDLE_GEMFILE' => gemfile,
+    'BUNDLE_GEMFILE' => gemfile
   )
 end
 

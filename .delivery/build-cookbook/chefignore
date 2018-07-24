@@ -54,7 +54,7 @@ features/*
 Guardfile
 Procfile
 .kitchen/
-.kitchen.local.yml
+kitchen.local.yml
 
 # SCM #
 #######
