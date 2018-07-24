@@ -14,3 +14,7 @@ depends 'build-essential'
 depends 'chef-sugar'
 depends 'homebrew'
 depends 'remote_install'
+
+supports 'ubuntu'
+supports 'redhat'
+supports 'centos'
